@@ -2,7 +2,7 @@
   <q-layout view="hHh Lpr lFf">
 
     <q-header
-      class="bg-white text-grey-8 q-py-xs "
+      class="bg-white text-grey-8 q-py-xs header-elevation"
       height-hint="58"
       bordered
     >
@@ -177,18 +177,19 @@
       @mouseover="miniState = false"
       @mouseout="miniState = true"
       mini-to-overlay
-      content-class="bg-white text-grey-9"
+      content-class="bg-white text-grey-9 drawer-elevation main-drawer"
     >
       <q-scroll-area class="fit">
         <q-list
           padding
           :key="userProfile"
+          class="menu-list"
         >
           <div v-if="userProfile === 'admin' || userProfile === 'user'">
-          <EssentialLink v-for="item in menuData" :key="item.title" v-bind="item"/>
+            <EssentialLink v-for="item in menuData" :key="item.title" v-bind="item"/>
           </div>
           <div v-if="userProfile === 'admin'">
-            <q-separator spaced />
+            <q-separator spaced class="menu-separator" />
             <div class="q-mb-lg"></div>
             <template v-for="item in menuDataAdmin">
               <EssentialLink
@@ -199,7 +200,6 @@
             </template>
           </div>
           <div v-if="userProfile === 'super'">
-            <!-- <q-separator spaced /> -->
             <div class="q-mb-lg"></div>
             <template v-for="item in menuDataSuper">
               <EssentialLink v-if="exibirMenuBeta(item)"
@@ -207,13 +207,11 @@
                 v-bind="item" />
             </template>
           </div>
-
         </q-list>
       </q-scroll-area>
       <div
-        class="absolute-bottom text-center row justify-start"
+        class="drawer-footer"
         :class="{ 'bg-grey-3': $q.dark.isActive }"
-        style="height: 40px"
       >
         <q-toggle
           size="xl"
@@ -274,22 +272,24 @@ const socket = socketIO()
 const objMenu = [
   {
     title: 'Dashboard',
-    caption: '',
-    icon: 'mdi-home',
-    routeName: 'home-dashboard'
+    caption: 'Visão geral do sistema',
+    icon: 'mdi-view-dashboard-variant',
+    routeName: 'home-dashboard',
+    color: 'primary'
   },
-
   {
     title: 'Atendimentos',
     caption: 'Lista de atendimentos',
-    icon: 'mdi-forum-outline',
-    routeName: 'atendimento'
+    icon: 'mdi-message-text-outline',
+    routeName: 'atendimento',
+    color: 'positive'
   },
   {
     title: 'Contatos',
     caption: 'Lista de contatos',
-    icon: 'mdi-card-account-mail',
-    routeName: 'contatos'
+    icon: 'mdi-account-group-outline',
+    routeName: 'contatos',
+    color: 'info'
   }
 ]
 
@@ -298,73 +298,85 @@ const objMenuAdmin = [
     title: 'Canais',
     caption: 'Canais de Comunicação',
     icon: 'mdi-cellphone-wireless',
-    routeName: 'sessoes'
+    routeName: 'sessoes',
+    color: 'primary'
   },
   {
     title: 'Painel Atendimentos',
     caption: 'Visão geral dos atendimentos',
-    icon: 'mdi-view-dashboard-variant',
-    routeName: 'painel-atendimentos'
+    icon: 'mdi-view-dashboard-variant-outline',
+    routeName: 'painel-atendimentos',
+    color: 'blue'
   },
   {
     title: 'Relatórios',
     caption: 'Relatórios gerais',
-    icon: 'mdi-file-chart',
-    routeName: 'relatorios'
+    icon: 'mdi-file-chart-outline',
+    routeName: 'relatorios',
+    color: 'accent'
   },
   {
     title: 'Usuarios',
     caption: 'Admin de usuários',
-    icon: 'mdi-account-group',
-    routeName: 'usuarios'
+    icon: 'mdi-account-cog-outline',
+    routeName: 'usuarios',
+    color: 'warning'
   },
   {
     title: 'Filas',
     caption: 'Cadastro de Filas',
     icon: 'mdi-arrow-decision-outline',
-    routeName: 'filas'
+    routeName: 'filas',
+    color: 'info'
   },
   {
     title: 'Mensagens Rápidas',
     caption: 'Mensagens pré-definidas',
     icon: 'mdi-reply-all-outline',
-    routeName: 'mensagens-rapidas'
+    routeName: 'mensagens-rapidas',
+    color: 'positive'
   },
   {
     title: 'Chatbot',
     caption: 'Robô de atendimento',
-    icon: 'mdi-robot',
-    routeName: 'chat-flow'
+    icon: 'mdi-robot-happy-outline',
+    routeName: 'chat-flow',
+    color: 'orange'
   },
   {
     title: 'Etiquetas',
     caption: 'Cadastro de etiquetas',
     icon: 'mdi-tag-text',
-    routeName: 'etiquetas'
+    routeName: 'etiquetas',
+    color: 'accent'
   },
   {
     title: 'Horário de Atendimento',
     caption: 'Horário de funcionamento',
     icon: 'mdi-calendar-clock',
-    routeName: 'horarioAtendimento'
+    routeName: 'horarioAtendimento',
+    color: 'warning'
   },
   {
     title: 'Configurações',
     caption: 'Configurações gerais',
     icon: 'mdi-cog',
-    routeName: 'configuracoes'
+    routeName: 'configuracoes',
+    color: 'primary'
   },
   {
     title: 'Campanha',
     caption: 'Campanhas de envio',
     icon: 'mdi-message-bookmark-outline',
-    routeName: 'campanhas'
+    routeName: 'campanhas',
+    color: 'positive'
   },
   {
     title: 'API',
     caption: 'Integração sistemas externos',
     icon: 'mdi-call-split',
-    routeName: 'api-service'
+    routeName: 'api-service',
+    color: 'info'
   }
 ]
 
@@ -373,19 +385,22 @@ const superMenu = [
     title: 'Empresas',
     caption: 'Admin das Empresas',
     icon: 'mdi-office-building',
-    routeName: 'empresassuper'
+    routeName: 'empresassuper',
+    color: 'primary'
   },
   {
     title: 'Usuarios',
     caption: 'Admin de usuários',
     icon: 'mdi-account-group',
-    routeName: 'usuariossuper'
+    routeName: 'usuariossuper',
+    color: 'secondary'
   },
   {
     title: 'Canais',
     caption: 'Canais de Comunicação',
     icon: 'mdi-cellphone-wireless',
-    routeName: 'sessaosuper'
+    routeName: 'sessaosuper',
+    color: 'accent'
   }
 ]
 
@@ -612,8 +627,51 @@ export default {
   }
 }
 </script>
-<style scoped>
-.q-img__image {
-  background-size: contain;
-}
+<style lang="sass">
+.header-elevation
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1)
+  transition: all 0.3s ease
+
+.drawer-elevation
+  box-shadow: 2px 0 4px rgba(0,0,0,0.1)
+  transition: all 0.3s ease
+
+.main-drawer
+  .q-drawer__content
+    background: linear-gradient(to bottom, #ffffff, #f8f9fa)
+    display: flex
+    flex-direction: column
+
+.menu-list
+  .q-item
+    margin: 4px 8px
+    border-radius: 8px
+    transition: all 0.3s ease
+  flex: 1
+  overflow-y: auto
+
+.menu-separator
+  margin: 8px 16px
+  background: rgba(21, 120, 173, 0.1)
+
+.drawer-footer
+  position: sticky
+  bottom: 0
+  left: 0
+  right: 0
+  height: 60px
+  padding: 8px 16px
+  border-top: 1px solid rgba(0,0,0,0.1)
+  transition: all 0.3s ease
+  background: white
+  z-index: 1
+
+.menu-link-active-item-top
+  background: rgba(21, 120, 173, 0.1)
+  border-left: 3px solid rgb(21, 120, 173)
+  border-right: 3px solid rgb(21, 120, 173)
+  border-top-right-radius: 20px
+  border-bottom-right-radius: 20px
+  position: relative
+  height: 100%
 </style>
