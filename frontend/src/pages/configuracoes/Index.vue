@@ -190,7 +190,7 @@
             autogrow
             dense
             outlined
-            label="Seu Token Notificame"
+            label="Seu Token NotificaME"
             input-style="min-height: 6vh;"
             debounce="700"
             @input="atualizarConfiguracao('hubToken')"
