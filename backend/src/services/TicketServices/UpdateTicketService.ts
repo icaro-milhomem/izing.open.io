@@ -7,6 +7,13 @@ import User from "../../models/User";
 import socketEmit from "../../helpers/socketEmit";
 import CreateLogTicketService from "./CreateLogTicketService";
 
+// Função para verificar se a mensagem contém código PIX
+const containsPixCode = (message: string): boolean => {
+  // Verifica se a mensagem contém o padrão de código PIX
+  const pixPattern = /00020101021226850014br\.gov\.bcb\.pix2563qrcodepix\.bb\.com\.br\/pix\/v2\/[a-zA-Z0-9-]+/;
+  return pixPattern.test(message);
+};
+
 interface TicketData {
   status?: string;
   userId?: number;
@@ -66,6 +73,16 @@ const UpdateTicketService = async ({
 
   if (!ticket) {
     throw new AppError("ERR_NO_TICKET_FOUND", 404);
+  }
+
+  // Verifica se está tentando abrir um ticket com código PIX
+  if (status === "open" && ticket.lastMessage && typeof ticket.lastMessage === "string" && containsPixCode(ticket.lastMessage)) {
+    // Remove qualquer linha que seja apenas "Nome:" (assinatura) antes do código PIX
+    const messageWithoutSignature = ticket.lastMessage
+      .split('\n')
+      .filter(line => !/^[^:]+:\s*$/i.test(line.trim()))
+      .join('\n');
+    await ticket.update({ lastMessage: messageWithoutSignature.trim() });
   }
 
   await SetTicketMessagesAsRead(ticket);

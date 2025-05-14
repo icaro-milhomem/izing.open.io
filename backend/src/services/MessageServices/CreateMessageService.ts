@@ -19,10 +19,22 @@ interface Request {
   tenantId: string | number;
 }
 
+const containsPixCode = (message: string): boolean => {
+  const pixPattern = /00020101021226850014br\.gov\.bcb\.pix2563qrcodepix\.bb\.com\.br\/pix\/v2\/[a-zA-Z0-9-]+/;
+  return pixPattern.test(message);
+};
+
 const CreateMessageService = async ({
   messageData,
   tenantId
 }: Request): Promise<Message> => {
+  if (messageData.body && containsPixCode(messageData.body)) {
+    messageData.body = messageData.body
+      .split('\n')
+      .filter(line => !/^[^:]+:\s*$/i.test(line.trim()))
+      .join('\n')
+      .trim();
+  }
   const msg = await Message.findOne({
     where: { messageId: messageData.messageId, tenantId }
   });

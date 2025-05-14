@@ -120,6 +120,11 @@ const downloadMedia = async (msg: any): Promise<any> => {
   }
 };
 
+const containsPixCode = (message: string): boolean => {
+  const pixPattern = /00020101021226850014br\.gov\.bcb\.pix2563qrcodepix\.bb\.com\.br\/pix\/v2\/[a-zA-Z0-9-]+/;
+  return pixPattern.test(message);
+};
+
 const CreateMessageSystemService = async ({
   msg,
   tenantId,
@@ -160,6 +165,14 @@ const CreateMessageSystemService = async ({
         protocol: ticket.protocol,
         name: ticket.contact.name
       });
+    }
+    // Remover assinatura após processamento do template
+    if (messageData.body && containsPixCode(messageData.body)) {
+      messageData.body = messageData.body
+        .split('\n')
+        .filter(line => !/^[^:]+:\s*$/i.test(line.trim()))
+        .join('\n')
+        .trim();
     }
     if (sendType === "API" && msg.mediaUrl) {
       medias = [];
