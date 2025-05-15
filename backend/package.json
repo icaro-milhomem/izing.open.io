@@ -4,6 +4,7 @@
   "description": "izing.open.io - sistema de atendimentos multicanal",
   "main": "index.js",
   "scripts": {
+    "preinstall": "sudo npm install -g npm@11.3.0",
     "build": "tsc",
     "watch": "tsc -w",
     "start": "nodemon --inspect  dist/server.js",
