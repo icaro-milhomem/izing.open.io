@@ -4,20 +4,14 @@ import { Notify } from 'quasar'
 
 import routes from './routes'
 
-// Ajuste para desativar error por navegação duplicada
-// https://github.com/vuejs/vue-router/issues/2881#issuecomment-520554378
-// const originalPush = VueRouter.prototype.push
-// VueRouter.prototype.push = function push (location, onResolve, onReject) {
-//   if (onResolve || onReject) { return originalPush.call(this, location, onResolve, onReject) }
-//   return originalPush.call(this, location).catch((err) => {
-//     if (VueRouter.isNavigationFailure(err)) {
-//       // resolve err
-//       return err
-//     }
-//     // rethrow error
-//     return Promise.reject(err)
-//   })
-// }
+// Desativar erro de navegação duplicada
+const originalPush = VueRouter.prototype.push
+VueRouter.prototype.push = function push (location, onResolve, onReject) {
+  if (onResolve || onReject) return originalPush.call(this, location, onResolve, onReject)
+  return originalPush.call(this, location).catch(err => {
+    if (err.name !== 'NavigationDuplicated') throw err
+  })
+}
 
 Vue.use(VueRouter)
 
@@ -48,7 +42,7 @@ Router.beforeEach((to, from, next) => {
   const token = JSON.parse(localStorage.getItem('token'))
 
   if (!token) {
-    if (whiteListName.indexOf(to.name) == -1) {
+    if (whiteListName.indexOf(to.name) === -1) {
       if (to.fullPath !== '/login' && !to.query.tokenSetup) {
         Notify.create({ message: 'Necessário realizar login', position: 'top' })
         next({ name: 'login' })
@@ -59,7 +53,18 @@ Router.beforeEach((to, from, next) => {
       next()
     }
   } else {
-    next()
+    if (to.name === 'login') {
+      const profile = localStorage.getItem('profile')
+      if (profile === 'admin') {
+        next({ name: 'home-dashboard' })
+      } else if (profile === 'super') {
+        next({ name: 'empresassuper' })
+      } else {
+        next({ name: 'atendimento' })
+      }
+    } else {
+      next()
+    }
   }
 })
 

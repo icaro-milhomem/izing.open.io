@@ -14,7 +14,6 @@ const pesquisaTicketsFiltroPadrao = {
   withUnreadMessages: false,
   isNotAssignedUser: false,
   includeNotQueueDefined: true
-  // date: new Date(),
 }
 
 const user = {
@@ -49,7 +48,6 @@ const user = {
         localStorage.setItem('userId', data.userId)
         localStorage.setItem('usuario', JSON.stringify(data))
         localStorage.setItem('queues', JSON.stringify(data.queues))
-        localStorage.setItem('queues', JSON.stringify(data.queues))
         localStorage.setItem('filtrosAtendimento', JSON.stringify(pesquisaTicketsFiltroPadrao))
 
         if (data?.configs?.filtrosAtendimento) {
@@ -70,19 +68,8 @@ const user = {
           progress: true
         })
 
-        if (data.profile === 'admin') {
-          this.$router.push({
-            name: 'home-dashboard'
-          })
-        } else if (data.profile === 'super') {
-          this.$router.push({
-            name: 'empresassuper'
-          })
-        } else {
-          this.$router.push({
-            name: 'atendimento'
-          })
-        }
+        // O guard de navegação vai cuidar do redirecionamento
+        window.location.href = '/'
       } catch (error) {
         console.error(error, error.data.error === 'ERROR_NO_PERMISSION_API_ADMIN')
       }
