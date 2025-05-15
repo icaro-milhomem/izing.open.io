@@ -51,7 +51,8 @@
             :label="ticket.unreadMessages" />
           <img :src="ticket.profilePicUrl"
             onerror="this.style.display='none'"
-            v-show="ticket.profilePicUrl">
+            v-show="ticket.profilePicUrl"
+            style="background: #ebebeb url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2ViZWJlYiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5QbGFjZWhvbGRlcjwvdGV4dD48L3N2Zz4=') no-repeat center">
           <q-icon size="50px"
             name="mdi-account-circle"
             color="grey-8" />
@@ -263,7 +264,7 @@ img:after
   width: inherit
   height: inherit
   z-index: 10
-  background: #ebebeb url('http://via.placeholder.com/300?text=PlaceHolder') no-repeat center
+  background: #ebebeb url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2ViZWJlYiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5QbGFjZWhvbGRlcjwvdGV4dD48L3N2Zz4=') no-repeat center
   color: transparent
 
 .ticket-active-item
