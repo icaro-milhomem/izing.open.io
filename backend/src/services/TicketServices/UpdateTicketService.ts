@@ -6,6 +6,8 @@ import Ticket from "../../models/Ticket";
 import User from "../../models/User";
 import socketEmit from "../../helpers/socketEmit";
 import CreateLogTicketService from "./CreateLogTicketService";
+import Message from "../../models/Message";
+import SendMessageSystemProxy from "../../helpers/SendMessageSystemProxy";
 
 // Função para verificar se a mensagem contém código PIX
 const containsPixCode = (message: string): boolean => {
@@ -117,6 +119,34 @@ const UpdateTicketService = async ({
     data.autoReplyId = null;
     data.stepAutoReplyId = null;
     data.startedAttendanceAt = new Date().getTime();
+
+    // Adicionar mensagem personalizada do atendente e enviar para o cliente
+    const user = await User.findByPk(userId);
+    if (user) {
+      const mensagens = [
+        `Olá! Sou ${user.name}, da equipe EcoNect Fibra. Vou te ajudar a resolver sua solicitação agora mesmo.`,
+        `Olá! Aqui é ${user.name} da EcoNect Fibra. Vamos iniciar seu atendimento!`,
+        `Oi! Tudo bem? 😊 Sou ${user.name}, da EcoNect Fibra, e vou te acompanhar no atendimento. Como posso te ajudar?`,
+        `Olá! 👋 Me chamo ${user.name} e faço parte da equipe da EcoNect Fibra. Estou aqui para te ajudar no que for preciso!`
+      ];
+      const mensagemAleatoria = mensagens[Math.floor(Math.random() * mensagens.length)];
+
+      await SendMessageSystemProxy({
+        ticket,
+        messageData: {
+          body: mensagemAleatoria,
+          ticketId,
+          contactId: ticket.contactId,
+          fromMe: true,
+          read: true,
+          mediaType: "chat",
+          userId,
+          tenantId: ticket.tenantId
+        },
+        media: null,
+        userId
+      });
+    }
   }
 
   await ticket.update(data);
