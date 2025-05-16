@@ -78,7 +78,6 @@
                   color="primary"
                   class="full-width login-button"
                   :loading="loading"
-                  @click="fazerLogin"
                 />
               </div>
             </q-form>

@@ -1,6 +1,7 @@
 import { RealizarLogin } from '../../service/login'
 import { Notify, Dark } from 'quasar'
 import { socketIO } from 'src/utils/socket'
+import router from 'src/router'
 
 const socket = socketIO()
 
@@ -68,10 +69,21 @@ const user = {
           progress: true
         })
 
-        // O guard de navegação vai cuidar do redirecionamento
-        window.location.href = '/'
+        // Aguardar um tick para garantir que o estado foi atualizado
+        await new Promise(resolve => setTimeout(resolve, 0))
+
+        // Navegar baseado no perfil
+        const route = data.profile === 'admin'
+          ? { name: 'home-dashboard' }
+          : data.profile === 'super'
+            ? { name: 'empresassuper' }
+            : { name: 'atendimento' }
+
+        await router.push(route)
+        return data
       } catch (error) {
         console.error(error, error.data.error === 'ERROR_NO_PERMISSION_API_ADMIN')
+        throw error
       }
     }
   }
