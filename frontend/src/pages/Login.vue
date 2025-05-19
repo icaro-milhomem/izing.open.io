@@ -25,7 +25,7 @@
               <q-img
                 src="/logo_izing.png"
                 spinner-color="primary"
-                style="height: 100px; width: 300px"
+                style="width: 300px; height: auto"
                 class="q-mb-lg q-px-md"
               />
               <div class="logo-text">Izing</div>
