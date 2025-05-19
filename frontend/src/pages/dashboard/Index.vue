@@ -136,7 +136,7 @@
             >
               <q-card-section class="text-center">
                 <q-icon name="mdi-timer" size="2em" color="secondary" class="q-mb-sm"/>
-                <p class="text-h5 text-bold text-center text-secondary"> {{ cTmaFormat }} </p>
+                <p class="text-h5 text-bold text-center text-secondary"> {{ cTmaFormat || 'Sem dados' }} </p>
                 <div class="text-subtitle1">Tempo Médio Atendimento</div>
               </q-card-section>
             </q-card>
