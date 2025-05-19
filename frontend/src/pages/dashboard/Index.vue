@@ -264,6 +264,7 @@ import {
   GetDashTicketsPerUsersDetail
 } from 'src/service/estatisticas'
 import { subDays, format, formatDuration, differenceInDays } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import ApexChart from 'vue-apexcharts'
 
 export default {
@@ -727,7 +728,7 @@ export default {
           align: 'center',
           headerStyle: 'text-align: center !important',
           format: v => {
-            return formatDuration(v) || ''
+            return formatDuration(v, { locale: ptBR }) || ''
           }
         },
         {
@@ -737,7 +738,7 @@ export default {
           align: 'center',
           headerStyle: 'text-align: center !important',
           format: v => {
-            return formatDuration(v) || ''
+            return formatDuration(v, { locale: ptBR }) || ''
           }
         }
       ],
@@ -978,11 +979,11 @@ export default {
   computed: {
     cTmaFormat () {
       const tma = this.ticketsAndTimes.tma || {}
-      return formatDuration(tma) || ''
+      return formatDuration(tma, { locale: ptBR }) || ''
     },
     cTmeFormat () {
       const tme = this.ticketsAndTimes.tme || {}
-      return formatDuration(tme) || ''
+      return formatDuration(tme, { locale: ptBR }) || ''
     }
   },
   methods: {
