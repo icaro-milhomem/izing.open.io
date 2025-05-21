@@ -17,4 +17,6 @@ userRoutes.get("/users/:userId", isAuth, UserController.show);
 
 userRoutes.delete("/users/:userId", isAuth, UserController.remove);
 
+userRoutes.patch("/users/status", isAuth, UserController.updateStatus);
+
 export default userRoutes;

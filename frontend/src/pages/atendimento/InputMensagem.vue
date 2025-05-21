@@ -446,8 +446,9 @@ export default {
       visualizarMensagensRapidas: false,
       arquivos: [],
       textChat: '',
-      sign: false,
-      scheduleDate: null
+      sign: LocalStorage.getItem('sign') || false,
+      scheduleDate: null,
+      signatureColor: LocalStorage.getItem('signatureColor') || this.getRandomColor()
     }
   },
   computed: {
@@ -464,10 +465,29 @@ export default {
         search = search.replace('/', '')
       }
       return !search ? this.mensagensRapidas : this.mensagensRapidas.filter(r => r.key.toLowerCase().indexOf(search) !== -1)
-      // return this.mensagensRapidas
     }
   },
   methods: {
+    getRandomColor () {
+      const colors = [
+        '#FF6B6B', // Vermelho
+        '#4ECDC4', // Turquesa
+        '#45B7D1', // Azul
+        '#96CEB4', // Verde
+        '#FFEEAD', // Amarelo
+        '#D4A5A5', // Rosa
+        '#9B59B6', // Roxo
+        '#3498DB', // Azul Royal
+        '#E67E22', // Laranja
+        '#2ECC71' // Verde Esmeralda
+      ]
+      return colors[Math.floor(Math.random() * colors.length)]
+    },
+    handleSign () {
+      this.signatureColor = this.getRandomColor()
+      LocalStorage.set('signatureColor', this.signatureColor)
+      LocalStorage.set('sign', this.sign)
+    },
     openFilePreview (event) {
       const data = event.clipboardData.files[0]
       const urlImg = window.URL.createObjectURL(data)
@@ -629,7 +649,6 @@ export default {
         body: mensagem,
         scheduleDate: this.isScheduleDate ? this.scheduleDate : null,
         quotedMsg: this.replyingMessage,
-        // idFront: uid()
         id: uid()
       }
       if (this.isScheduleDate) {
@@ -756,10 +775,6 @@ export default {
           color: 'white'
         }]
       })
-    },
-    handleSign (state) {
-      this.sign = state
-      LocalStorage.set('sign', this.sign)
     }
   },
   mounted () {
@@ -776,6 +791,11 @@ export default {
   },
   destroyed () {
     this.$root.$off('mensagem-chat:focar-input-mensagem')
+  },
+  created () {
+    if (!LocalStorage.getItem('signatureColor')) {
+      LocalStorage.set('signatureColor', this.signatureColor)
+    }
   }
 }
 </script>

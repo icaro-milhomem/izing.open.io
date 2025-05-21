@@ -5,6 +5,8 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import { logger } from "../utils/logger";
+import path from "path";
+import expressStatic from "express";
 
 export default async function express(app: Application): Promise<void> {
   const origin = [process.env.FRONTEND_URL || "https://app.izing.io"];
@@ -58,6 +60,11 @@ export default async function express(app: Application): Promise<void> {
   app.use(
     urlencoded({ extended: true, limit: "50MB", parameterLimit: 200000 })
   );
+
+  // Servir arquivos estáticos da pasta uploads
+  app.use("/uploads", expressStatic.static(path.resolve(__dirname, "../../uploads")));
+  // Alias para compatibilidade com mensagens antigas
+  app.use("/arquivos", expressStatic.static(path.resolve(__dirname, "../../uploads")));
 
   logger.info("express already in server!");
 }

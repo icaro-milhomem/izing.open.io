@@ -25,6 +25,8 @@ import facebookRoutes from "./facebookRoutes";
 import hubChannelRoutes from "./hubChannelRoutes";
 import hubMessageRoutes from "./hubMessageRoutes";
 import hubWebhookRoutes from "./hubWebhookRoutes";
+import internalMessagesRoutes from "./internalMessages";
+import fileUploadRoutes from "./fileUploadRoutes";
 
 const routes = Router();
 
@@ -54,5 +56,7 @@ routes.use(facebookRoutes);
 routes.use(hubChannelRoutes)
 routes.use(hubMessageRoutes)
 routes.use(hubWebhookRoutes)
+routes.use("/internal-messages", internalMessagesRoutes)
+routes.use(fileUploadRoutes)
 
 export default routes;

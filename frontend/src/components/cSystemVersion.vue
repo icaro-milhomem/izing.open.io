@@ -1,5 +1,5 @@
 <template>
-  <div class="text-caption text-center bg-grey-1 q-pa-sm">
+  <div class="text-caption text-center q-pa-sm versao-sistema">
     Versão Sistema:
     <q-badge align="middle"
       color="primary">
@@ -19,5 +19,10 @@ export default {
 }
 </script>
 <style>
-
+.versao-sistema {
+  color: #222 !important;
+}
+body.body--dark .versao-sistema {
+  color: #fff !important;
+}
 </style>

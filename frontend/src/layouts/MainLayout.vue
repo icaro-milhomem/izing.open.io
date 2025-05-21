@@ -285,6 +285,13 @@ const objMenu = [
     color: 'positive'
   },
   {
+    title: 'Chat Interno',
+    caption: 'Comunicação entre atendentes',
+    icon: 'mdi-chat-processing',
+    routeName: 'chat-interno',
+    color: 'info'
+  },
+  {
     title: 'Contatos',
     caption: 'Lista de contatos',
     icon: 'mdi-account-group-outline',

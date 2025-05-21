@@ -77,7 +77,7 @@ export const logout = async (
   const userLogout = await User.findByPk(userId);
 
   if (userLogout) {
-    userLogout.update({ isOnline: false, lastLogout: new Date() });
+    userLogout.update({ isOnline: false, status: "offline", lastLogout: new Date() });
   }
 
   io.emit(`${userLogout?.tenantId}:users`, {

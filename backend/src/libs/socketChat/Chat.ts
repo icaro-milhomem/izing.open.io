@@ -24,13 +24,23 @@ import { logger } from "../../utils/logger";
 
 const events: any = {};
 
-const JoinChatServer = (socket: Socket) => {
+const JoinChatServer = async (socket: Socket) => {
   const { user } = socket.handshake.auth;
 
   logger.info(`joinChatServer USER ${user.name}`);
   const { tenantId } = user;
   const socketDataTenant = `socketData_${tenantId}`;
   let dataTenant: any;
+
+  // Atualiza o status do usuário no banco ao conectar
+  try {
+    const instance = await User.findByPk(user.id);
+    if (instance) {
+      await instance.update({ isOnline: true, status: 'online' });
+    }
+  } catch (err) {
+    logger.error('Erro ao atualizar status online do usuário:', err);
+  }
 
   // dataTenant = await getValue(socketDataTenant);
   dataTenant = shared[socketDataTenant];
@@ -424,7 +434,7 @@ const onDisconnect = (socket: Socket) => {
 
     // Save lastOnline Time
     const instance = await User.findByPk(user.id);
-    instance?.update({ status: "offline", lastOnline: new Date() });
+    instance?.update({ status: "offline", isOnline: false, lastOnline: new Date() });
     UpdateOnlineBubbles(socket);
 
     if (reason === "transport error") {

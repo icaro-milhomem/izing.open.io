@@ -7,10 +7,11 @@ interface Request {
   searchParam?: string;
   pageNumber?: string | number;
   tenantId: string | number;
+  loggedUserId?: string | number;
 }
 
 interface Response {
-  users: User[];
+  users: any[];
   count: number;
   hasMore: boolean;
 }
@@ -18,9 +19,10 @@ interface Response {
 const ListUsersService = async ({
   searchParam = "",
   pageNumber = "1",
-  tenantId
+  tenantId,
+  loggedUserId
 }: Request): Promise<Response> => {
-  const whereCondition = {
+  const whereCondition: any = {
     tenantId,
     [Op.or]: [
       {
@@ -33,13 +35,16 @@ const ListUsersService = async ({
       { email: { [Op.like]: `%${searchParam.toLowerCase()}%` } }
     ]
   };
+  if (loggedUserId) {
+    whereCondition.id = { [Op.ne]: loggedUserId };
+  }
   const limit = 40;
   const offset = limit * (+pageNumber - 1);
 
   const { count, rows: users } = await User.findAndCountAll({
     where: whereCondition,
     include: [{ model: Queue, attributes: ["id", "queue"] }],
-    attributes: ["name", "id", "email", "profile"],
+    attributes: ["name", "id", "email", "profile", "status", "isOnline"],
     limit,
     offset,
     distinct: true,
@@ -49,7 +54,10 @@ const ListUsersService = async ({
   const hasMore = count > offset + users.length;
 
   return {
-    users,
+    users: users.map(user => ({
+      ...user.get({ plain: true }),
+      status: user.isOnline ? 'online' : 'offline'
+    })),
     count,
     hasMore
   };

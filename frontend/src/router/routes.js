@@ -1,4 +1,3 @@
-
 const routes = [
   {
     path: '/',
@@ -23,6 +22,7 @@ const routes = [
       { path: '/sessaosuper', name: 'sessaosuper', component: () => import('pages/sessaosuper/Index.vue') },
       { path: '/usuariossuper', name: 'usuariossuper', component: () => import('pages/usuariossuper/Index.vue') },
       { path: '/empresassuper', name: 'empresassuper', component: () => import('pages/empresassuper/Index.vue') },
+      { path: '/chat-interno', name: 'chat-interno', component: () => import('pages/atendimento/ChatInterno.vue') },
       {
         path: '/chat-flow',
         component: () => import('pages/chatFlow/Index.vue'),
