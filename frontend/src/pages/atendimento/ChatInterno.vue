@@ -10,8 +10,12 @@
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-list separator>
+              <!-- Usuários Online -->
+              <q-item-label header class="text-primary">
+                Online ({{ onlineUsers.length }})
+              </q-item-label>
               <q-item
-                v-for="user in users"
+                v-for="user in onlineUsers"
                 :key="user.id"
                 clickable
                 v-ripple
@@ -20,18 +24,60 @@
                 class="chat-user-item"
               >
                 <q-item-section avatar>
-                  <q-avatar :color="user.status === 'online' ? 'positive' : 'grey'">
+                  <q-avatar color="positive">
                     <q-icon name="person" />
                   </q-avatar>
                 </q-item-section>
                 <q-item-section>
                   <q-item-label>{{ user.name }}</q-item-label>
-                  <q-item-label caption>{{ user.status === 'online' ? 'Online' : 'Offline' }}</q-item-label>
+                  <q-item-label caption>Online</q-item-label>
                 </q-item-section>
                 <q-item-section side v-if="user.unreadCount > 0">
                   <q-badge color="primary">{{ user.unreadCount }}</q-badge>
                 </q-item-section>
               </q-item>
+
+              <!-- Separador e Botão Offline -->
+              <q-separator spaced />
+              <q-item clickable v-ripple @click="showOffline = !showOffline">
+                <q-item-section>
+                  <q-item-label header class="text-grey">
+                    Offline ({{ offlineUsers.length }})
+                    <q-icon
+                      :name="showOffline ? 'expand_less' : 'expand_more'"
+                      class="q-ml-sm"
+                    />
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+
+              <!-- Usuários Offline -->
+              <q-slide-transition>
+                <div v-show="showOffline">
+                  <q-item
+                    v-for="user in offlineUsers"
+                    :key="user.id"
+                    clickable
+                    v-ripple
+                    :active="selectedUser && selectedUser.id === user.id"
+                    @click="selectUser(user)"
+                    class="chat-user-item"
+                  >
+                    <q-item-section avatar>
+                      <q-avatar color="grey">
+                        <q-icon name="person" />
+                      </q-avatar>
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label>{{ user.name }}</q-item-label>
+                      <q-item-label caption>Offline</q-item-label>
+                    </q-item-section>
+                    <q-item-section side v-if="user.unreadCount > 0">
+                      <q-badge color="primary">{{ user.unreadCount }}</q-badge>
+                    </q-item-section>
+                  </q-item>
+                </div>
+              </q-slide-transition>
             </q-list>
           </q-card-section>
         </q-card>
@@ -147,10 +193,19 @@ export default {
       messages: [],
       selectedUser: null,
       newMessage: '',
+      showOffline: false,
       currentUser: (() => {
         const u = JSON.parse(localStorage.getItem('usuario')) || {}
         return { ...u, id: u.id || u.userId }
       })()
+    }
+  },
+  computed: {
+    onlineUsers () {
+      return this.users.filter(user => user.status === 'online')
+    },
+    offlineUsers () {
+      return this.users.filter(user => user.status === 'offline')
     }
   },
   methods: {
@@ -405,41 +460,48 @@ export default {
   padding: 10px 14px;
   border-radius: 16px;
   position: relative;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
   transition: box-shadow 0.2s;
   word-break: break-word;
   display: flex;
   flex-direction: column;
+  border: 2px solid transparent;
 }
 
 .message-sent {
-  background: linear-gradient(90deg, #e0f7fa 80%, #b2ebf2 100%) !important;
+  background: linear-gradient(90deg, #232e3a 80%, #2d3b4d 100%) !important;
   align-self: flex-end;
   margin-left: auto;
   margin-right: 0;
   border-bottom-right-radius: 4px;
   text-align: right;
-  border: 2px solid #00bcd4 !important;
+  border: 2px solid #4fc3f7 !important;
+  color: #fff !important;
+  box-shadow: 0 2px 12px 0 rgba(80,200,255,0.10);
 }
 
 .message-received {
-  background: #d4f8e8 !important;
+  background: linear-gradient(90deg, #232a25 80%, #2d3b2d 100%) !important;
   align-self: flex-start;
   margin-right: auto;
   margin-left: 0;
   border-bottom-left-radius: 4px;
   text-align: left;
-  border: 2px solid #43a047 !important;
+  border: 2px solid #81c784 !important;
+  color: #fff !important;
+  box-shadow: 0 2px 12px 0 rgba(120,255,180,0.10);
 }
 
 .message-content {
   font-size: 1.08em;
+  color: inherit;
 }
 .message-time {
   font-size: 0.75rem;
-  opacity: 0.7;
+  opacity: 0.8;
   margin-top: 4px;
   text-align: right;
+  color: #e0e0e0;
 }
 .message-meta {
   display: flex;
@@ -449,7 +511,7 @@ export default {
 }
 .message-sender {
   font-size: 0.85em;
-  color: #1976d2;
+  color: #90caf9;
   font-weight: 500;
 }
 
