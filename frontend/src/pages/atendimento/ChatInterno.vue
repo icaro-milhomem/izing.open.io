@@ -345,10 +345,16 @@ export default {
       Notification.requestPermission()
     }
     this.loadUsers()
-    socket.on(`${this.currentUser.tenantId}:internal_message:${this.currentUser.id}`, this.handleNewMessage)
-    socket.on(`${this.currentUser.tenantId}:users`, () => {
-      this.loadUsers()
+    // Escuta eventos de atualização de usuários
+    socket.on(`${this.currentUser.tenantId}:users`, (data) => {
+      if (data.action === 'update') {
+        const updatedUser = this.users.find(u => u.email === data.data.email)
+        if (updatedUser) {
+          updatedUser.status = data.data.status || (data.data.isOnline ? 'online' : 'offline')
+        }
+      }
     })
+    socket.on(`${this.currentUser.tenantId}:internal_message:${this.currentUser.id}`, this.handleNewMessage)
     // Garante que ao reconectar, o canal de mensagens seja reescutado
     socket.on('connect', () => {
       socket.on(`${this.currentUser.tenantId}:internal_message:${this.currentUser.id}`, this.handleNewMessage)

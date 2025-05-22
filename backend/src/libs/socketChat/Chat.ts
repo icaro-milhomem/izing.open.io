@@ -21,6 +21,7 @@ import {
 import { shared } from "./Index";
 import User from "../../models/User";
 import { logger } from "../../utils/logger";
+import { getIO } from "../socket";
 
 const events: any = {};
 
@@ -432,9 +433,25 @@ const onDisconnect = (socket: Socket) => {
       dataTenant.sockets = without(dataTenant.sockets, i);
     }
 
-    // Save lastOnline Time
+    // Save lastOnline Time and update status
     const instance = await User.findByPk(user.id);
-    instance?.update({ status: "offline", isOnline: false, lastOnline: new Date() });
+    if (instance) {
+      await instance.update({ status: "offline", isOnline: false, lastOnline: new Date() });
+      
+      // Notify all users about the status change
+      const io = getIO();
+      io.emit(`${tenantId}:users`, {
+        action: "update",
+        data: {
+          username: user.name,
+          email: user.email,
+          isOnline: false,
+          status: "offline",
+          lastOnline: new Date()
+        }
+      });
+    }
+
     UpdateOnlineBubbles(socket);
 
     if (reason === "transport error") {
