@@ -21,6 +21,7 @@ interface WhatsappData {
   chatFlowId?: number;
   wavoip?: string;
   queueId?: number;
+  logo?: string;
 }
 
 interface Request {
@@ -60,7 +61,8 @@ const UpdateWhatsAppService = async ({
     farewellMessage,
     chatFlowId,
     wavoip,
-    queueId
+    queueId,
+    logo
   } = whatsappData;
 
   try {
@@ -100,7 +102,8 @@ const UpdateWhatsAppService = async ({
       farewellMessage,
       chatFlowId,
       wavoip,
-      queueId
+      queueId,
+      logo
     };
 
     if (instagramKey) {

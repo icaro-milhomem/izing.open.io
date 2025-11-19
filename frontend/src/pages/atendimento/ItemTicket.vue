@@ -114,9 +114,23 @@
           <q-chip :color="$q.dark.isActive ? 'blue-9' : 'blue-2'"
             dense
             square
-            :label="ticket.whatsapp && ticket.whatsapp.name"
             size="10px"
-            class="q-mr-md text-bold" />
+            class="q-mr-md text-bold">
+            <q-avatar
+              v-if="ticket.whatsapp && ticket.whatsapp.logo && ticket.whatsapp.logo.trim() !== ''"
+              size="16px"
+              class="q-mr-xs"
+            >
+              <img :src="ticket.whatsapp.logo" />
+            </q-avatar>
+            <q-icon
+              v-else-if="ticket.channel"
+              :name="`img:${ticket.channel}-logo.png`"
+              size="14px"
+              class="q-mr-xs"
+            />
+            {{ ticket.whatsapp && ticket.whatsapp.name }}
+          </q-chip>
         </q-item-label>
         <!-- <span class="absolute-bottom-right" v-if="ticket.unreadMessages">
           <q-badge style="font-size: .8em; border-radius: 10px;" class="q-py-xs" dense text-color="white" color="green" :label="ticket.unreadMessages" />

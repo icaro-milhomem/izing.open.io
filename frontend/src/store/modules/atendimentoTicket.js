@@ -57,25 +57,25 @@ const checkTicketFilter = (ticket) => {
 
   // Verificar se é admin e se está solicitando para mostrar todos
   if (isAdminShowAll) {
-    console.log('isAdminShowAll', isAdminShowAll)
+    // console.log('isAdminShowAll', isAdminShowAll)
     return true
   }
 
   // se ticket for um grupo, todos podem verificar.
   if (ticket.isGroup) {
-    console.log('ticket.isGroup', ticket.isGroup)
+    // console.log('ticket.isGroup', ticket.isGroup)
     return true
   }
 
   // se status do ticket diferente do staatus filtrado, retornar false
   if (filtros.status.length > 0 && !filtros.status.includes(ticket.status)) {
-    console.log('Status ticket', filtros.status, ticket.status)
+    // console.log('Status ticket', filtros.status, ticket.status)
     return false
   }
 
   // verificar se já é um ticket do usuário
   if (ticket?.userId == userId) {
-    console.log('Ticket do usuário', ticket?.userId, userId)
+    // console.log('Ticket do usuário', ticket?.userId, userId)
     return true
   }
 
@@ -101,10 +101,10 @@ const checkTicketFilter = (ticket) => {
   if (isQueuesTenantExists) {
     const isQueueUser = UserQueues.findIndex(q => ticket.queueId === q.id)
     if (isQueueUser !== -1) {
-      console.log('Fila do ticket liberada para o Usuario', ticket.queueId)
+      // console.log('Fila do ticket liberada para o Usuario', ticket.queueId)
       isValid = true
     } else {
-      console.log('Usuario não tem acesso a fila', ticket.queueId)
+      // console.log('Usuario não tem acesso a fila', ticket.queueId)
       return false
     }
   }
@@ -113,7 +113,7 @@ const checkTicketFilter = (ticket) => {
   if (isQueuesTenantExists && filtros?.queuesIds.length) {
     const isQueue = filtros.queuesIds.findIndex(q => ticket.queueId === q)
     if (isQueue == -1) {
-      console.log('filas filtradas e diferentes da do ticket', ticket.queueId)
+      // console.log('filas filtradas e diferentes da do ticket', ticket.queueId)
       return false
     }
   }
@@ -132,7 +132,7 @@ const checkTicketFilter = (ticket) => {
   // verificar se o parametro para não permitir visualizar
   // tickets atribuidos à outros usuários está ativo
   if (isNotViewAssignedTickets() && (ticket?.userId || userId) !== userId) {
-    console.log('isNotViewAssignedTickets e ticket não é do usuário', ticket?.userId, userId)
+    // console.log('isNotViewAssignedTickets e ticket não é do usuário', ticket?.userId, userId)
     // se usuário não estiver atribuido, permitir visualizar
     if (!ticket?.userId) {
       return true
@@ -142,7 +142,7 @@ const checkTicketFilter = (ticket) => {
 
   // verificar se filtro somente tickets não assinados (isNotAssingned) ativo
   if (filtros.isNotAssignedUser) {
-    console.log('isNotAssignedUser ativo para exibir somente tickets não assinados', filtros.isNotAssignedUser, !ticket.userId)
+    // console.log('isNotAssignedUser ativo para exibir somente tickets não assinados', filtros.isNotAssignedUser, !ticket.userId)
     return filtros.isNotAssignedUser && !ticket.userId
   }
 

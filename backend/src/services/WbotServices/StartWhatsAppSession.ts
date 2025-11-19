@@ -1,4 +1,5 @@
 import { initWbot } from "../../libs/wbot";
+import { initWuzapiSession } from "../../libs/wuzapiSession";
 import Whatsapp from "../../models/Whatsapp";
 import { wbotMessageListener } from "./wbotMessageListener";
 import { getIO } from "../../libs/socket";
@@ -23,9 +24,16 @@ export const StartWhatsAppSession = async (
 
   try {
     if (whatsapp.type === "whatsapp") {
-      const wbot = await initWbot(whatsapp);
-      wbotMessageListener(wbot);
-      wbotMonitor(wbot, whatsapp);
+      // Verificar se deve usar WUZAPI
+      const useWuzapi = process.env.USE_WUZAPI === "true";
+
+      if (useWuzapi) {
+        await initWuzapiSession(whatsapp);
+      } else {
+        const wbot = await initWbot(whatsapp);
+        wbotMessageListener(wbot);
+        wbotMonitor(wbot, whatsapp);
+      }
     }
 
     if (whatsapp.type === "telegram") {

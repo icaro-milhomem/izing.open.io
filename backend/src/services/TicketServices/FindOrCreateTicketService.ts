@@ -93,7 +93,7 @@ const FindOrCreateTicketService = async ({
       },
       {
         association: "whatsapp",
-        attributes: ["id", "name", "wavoip"]
+        attributes: ["id", "name", "wavoip", "logo"]
       }
     ]
   });

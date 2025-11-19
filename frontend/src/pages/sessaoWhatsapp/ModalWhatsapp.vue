@@ -48,6 +48,35 @@
             />
           </div>
 
+          <div class="col-12 q-my-sm">
+            <q-file
+              v-model="logoFile"
+              label="Logo do Canal (opcional)"
+              accept="image/*"
+              outlined
+              rounded
+              dense
+              clearable
+              @input="handleLogoUpload"
+            >
+              <template v-slot:prepend>
+                <q-icon name="mdi-image" />
+              </template>
+              <template v-slot:append v-if="whatsapp.logo">
+                <q-avatar size="32px" class="q-mr-sm">
+                  <img :src="whatsapp.logo" />
+                </q-avatar>
+              </template>
+            </q-file>
+            <div v-if="whatsapp.logo" class="q-mt-sm">
+              <q-img
+                :src="whatsapp.logo"
+                style="max-width: 100px; max-height: 100px; border-radius: 8px;"
+                class="q-mt-xs"
+              />
+            </div>
+          </div>
+
           <div class="col-12 q-my-sm" v-if="whatsapp.type === 'hub'">
             <q-select v-model="selectedHubOption"
               rounded
@@ -259,6 +288,7 @@ import { ListarHub, AdicionarHub } from 'src/service/hub'
 import cInput from 'src/components/cInput.vue'
 import { copyToClipboard, Notify } from 'quasar'
 import { VEmojiPicker } from 'v-emoji-picker'
+import request from 'src/service/request'
 
 export default {
   components: { cInput, VEmojiPicker },
@@ -283,6 +313,7 @@ export default {
       selectedHubOption: null,
       isPwd: true,
       isEdit: false,
+      logoFile: null,
       whatsapp: {
         name: '',
         isDefault: false,
@@ -291,7 +322,8 @@ export default {
         instagramKey: '',
         tokenAPI: '',
         type: 'whatsapp',
-        farewellMessage: ''
+        farewellMessage: '',
+        logo: ''
       },
       optionsWhatsappsTypes: [
         { label: 'Whatsapp', value: 'whatsapp' },
@@ -387,17 +419,57 @@ export default {
       }, 10)
     },
 
+    async handleLogoUpload (file) {
+      if (!file) {
+        this.whatsapp.logo = ''
+        return
+      }
+
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+
+        const response = await request({
+          url: '/api/upload',
+          method: 'post',
+          data: formData,
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        })
+
+        if (response.data && response.data.url) {
+          // Construir URL completa
+          const baseURL = process.env.VUE_URL_API || ''
+          this.whatsapp.logo = baseURL + response.data.url
+        }
+      } catch (error) {
+        console.error('Erro ao fazer upload da logo:', error)
+        this.$q.notify({
+          type: 'negative',
+          message: 'Erro ao fazer upload da logo',
+          position: 'top'
+        })
+        this.logoFile = null
+      }
+    },
     fecharModal () {
       this.whatsapp = {
         name: '',
-        isDefault: false
+        isDefault: false,
+        logo: ''
       }
+      this.logoFile = null
       this.$emit('update:whatsAppEdit', {})
       this.$emit('update:modalWhatsapp', false)
     },
     abrirModal () {
       if (this.whatsAppEdit.id) {
         this.whatsapp = { ...this.whatsAppEdit }
+        this.logoFile = null
+      } else {
+        this.whatsapp.logo = ''
+        this.logoFile = null
       }
     },
     async handleSaveWhatsApp (whatsapp) {

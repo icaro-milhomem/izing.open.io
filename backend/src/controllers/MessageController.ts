@@ -125,9 +125,14 @@ export const edit = async (
   const { messageId } = req.params;
   const { tenantId } = req.user;
   const { body }: MessageData = req.body;
+  
+  logger.info(`[MessageController.edit] Iniciando edição. messageId: ${messageId}, tenantId: ${tenantId}, body.id: ${req.body.id}, newBody: ${body}`);
+  
   try {
     await EditWhatsAppMessage(req.body.id, messageId, tenantId, body);
-  } catch (error) {
+    logger.info(`[MessageController.edit] Edição concluída com sucesso para messageId: ${messageId}`);
+  } catch (error: any) {
+    logger.error(`[MessageController.edit] Erro ao editar mensagem ${messageId}: ${error?.message || error}`);
     if (error instanceof AppError && error.message === "ERR_EDITING_WAPP_MSG") {
       return res.status(400).json({ error: error.message });
     }

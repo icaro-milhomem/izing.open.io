@@ -245,7 +245,6 @@ const onSetUserActive = (socket: Socket) => {
         idleUsers: {}
       };
       dataTenant = shared[socketDataTenant];
-      dataTenant.usersOnline.push(socket.id);
     }
 
     if (dataTenant?.usersOnline) {

@@ -4,10 +4,12 @@ import SetTicketMessagesAsRead from "../../helpers/SetTicketMessagesAsRead";
 import Contact from "../../models/Contact";
 import Ticket from "../../models/Ticket";
 import User from "../../models/User";
+import Whatsapp from "../../models/Whatsapp";
 import socketEmit from "../../helpers/socketEmit";
 import CreateLogTicketService from "./CreateLogTicketService";
 import Message from "../../models/Message";
 import SendMessageSystemProxy from "../../helpers/SendMessageSystemProxy";
+import { logger } from "../../utils/logger";
 
 // Função para verificar se a mensagem contém código PIX
 const containsPixCode = (message: string): boolean => {
@@ -68,7 +70,7 @@ const UpdateTicketService = async ({
       },
       {
         association: "whatsapp",
-        attributes: ["id", "name", "wavoip"]
+        attributes: ["id", "name", "wavoip", "logo"]
       }
     ]
   });
@@ -123,29 +125,38 @@ const UpdateTicketService = async ({
     // Adicionar mensagem personalizada do atendente e enviar para o cliente
     const user = await User.findByPk(userId);
     if (user) {
-      const mensagens = [
-        `Olá! Sou ${user.name}, da equipe EcoNect Fibra. Vou te ajudar a resolver sua solicitação agora mesmo.`,
-        `Olá! Aqui é ${user.name} da EcoNect Fibra. Vamos iniciar seu atendimento!`,
-        `Oi! Tudo bem? 😊 Sou ${user.name}, da EcoNect Fibra, e vou te acompanhar no atendimento. Como posso te ajudar?`,
-        `Olá! 👋 Me chamo ${user.name} e faço parte da equipe da EcoNect Fibra. Estou aqui para te ajudar no que for preciso!`
-      ];
-      const mensagemAleatoria = mensagens[Math.floor(Math.random() * mensagens.length)];
+      // Verificar se o WhatsApp está realmente conectado antes de enviar
+      const whatsapp = await Whatsapp.findByPk(ticket.whatsappId);
+      if (whatsapp && whatsapp.status === "CONNECTED") {
+        try {
+          const mensagens = [
+            `Olá! Sou ${user.name}, da equipe EcoNect Fibra. Vou te ajudar a resolver sua solicitação agora mesmo.`,
+            `Olá! Aqui é ${user.name} da EcoNect Fibra. Vamos iniciar seu atendimento!`,
+            `Oi! Tudo bem? 😊 Sou ${user.name}, da EcoNect Fibra, e vou te acompanhar no atendimento. Como posso te ajudar?`,
+            `Olá! 👋 Me chamo ${user.name} e faço parte da equipe da EcoNect Fibra. Estou aqui para te ajudar no que for preciso!`
+          ];
+          const mensagemAleatoria = mensagens[Math.floor(Math.random() * mensagens.length)];
 
-      await SendMessageSystemProxy({
-        ticket,
-        messageData: {
-          body: mensagemAleatoria,
-          ticketId,
-          contactId: ticket.contactId,
-          fromMe: true,
-          read: true,
-          mediaType: "chat",
-          userId,
-          tenantId: ticket.tenantId
-        },
-        media: null,
-        userId
-      });
+          await SendMessageSystemProxy({
+            ticket,
+            messageData: {
+              body: mensagemAleatoria,
+              ticketId,
+              contactId: ticket.contactId,
+              fromMe: true,
+              read: true,
+              mediaType: "chat",
+              userId,
+              tenantId: ticket.tenantId
+            },
+            media: null,
+            userId
+          });
+        } catch (error) {
+          // Se falhar ao enviar, apenas loga o erro mas não impede o atendimento
+          logger.error(`Erro ao enviar mensagem ao iniciar atendimento: ${error}`);
+        }
+      }
     }
   }
 

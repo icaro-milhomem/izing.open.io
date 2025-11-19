@@ -5,7 +5,7 @@
       enter-active-class="animated fadeIn"
       leave-active-class="animated fadeOut"
     >
-      <template v-for="(mensagem, index) in       mensagens      ">
+      <div v-for="(mensagem, index) in       mensagens      " :key="mensagem.id">
         <hr
           v-if="isLineDate"
           :key="'hr-' + index"
@@ -15,18 +15,15 @@
         >
         <template v-if="mensagens.length && index === mensagens.length - 1">
           <div
-            :key="`ref-${mensagem.createdAt}`"
             ref="lastMessageRef"
             id="lastMessageRef"
-            style="float: 'left', background: 'black', clear: 'both'"
+            style="float: left; background: black; clear: both;"
           />
         </template>
         <div
-          :key="`chat-message-${mensagem.id}`"
           :id="`chat-message-${mensagem.id}`"
         />
         <q-chat-message
-          :key="mensagem.id"
           :stamp="dataInWords(mensagem.createdAt)"
           :sent="mensagem.fromMe"
           class="text-weight-medium"
@@ -93,11 +90,8 @@
                 </div>
               </q-tooltip>
             </q-icon>
-            <div v-if="mensagem.edited" class="text-italic">
-            Editada: {{ mensagem.edited }}
-            </div>
-            <div v-if="mensagem.edited" class="text-italic">
-             Mensagem anterior:<br>
+            <div v-if="mensagem.edited && mensagem.edited.trim() !== '' && mensagem.edited.toLowerCase() !== 'false'" class="text-caption text-grey-6 q-mb-xs">
+              <q-icon name="edit" size="12px" /> Editada
             </div>
             <div
               v-if="mensagem.isDeleted"
@@ -108,7 +102,7 @@
             <div
               v-if="isGroupLabel(mensagem)"
               class="q-mb-sm"
-              style="display: flex; color: rgb(59 23 251); fontWeight: 500;"
+              style="display: flex; color: rgb(59 23 251); font-weight: 500;"
             >
               {{ isGroupLabel(mensagem) }}
             </div>
@@ -194,12 +188,13 @@
               :color=" mensagem.ack >= 3 ? 'blue-12' : '' "
             />
             <template v-if=" mensagem.mediaType === 'audio' ">
-              <div style="width: 330px; heigth: 300px">
+              <div style="width: 330px; max-width: 100%;">
                 <audio
-                  class="q-mt-md full-width"
+                  class="q-mt-md"
                   controls
                   ref="audioMessage"
                   controlsList="nodownload volume novolume"
+                  style="width: 100%; height: 40px;"
                 >
                   <source :src="mensagem.mediaUrl" type="audio/mp3" />
                 </audio>
@@ -255,37 +250,28 @@
                 :src=" mensagem.mediaUrl "
                 controls
                 class="q-mt-md"
-                style="objectFit: cover;
+                style="object-fit: cover;
                   width: 330px;
                   height: 150px;
-                  borderTopLeftRadius: 8px;
-                  borderTopRightRadius: 8px;
-                  borderBottomLeftRadius: 8px;
-                  borderBottomRightRadius: 8px;
+                  border-top-left-radius: 8px;
+                  border-top-right-radius: 8px;
+                  border-bottom-left-radius: 8px;
+                  border-bottom-right-radius: 8px;
                 "
               >
               </video>
             </template>
             <template v-if=" !['audio', 'vcard', 'image', 'video'].includes(mensagem.mediaType) && mensagem.mediaUrl ">
               <div class="text-center full-width hide-scrollbar no-scroll">
-                <iframe
+                <PDFViewer
                   v-if=" isPDF(mensagem.mediaUrl) "
-                  frameBorder="0"
-                  scrolling="no"
-                  style="
-                    width: 330px;
-                    height: 150px;
-                    overflow-y: hidden;
-                    -ms-overflow-y: hidden;
-                  "
-                  class="no-scroll hide-scrollbar"
                   :src=" mensagem.mediaUrl "
-                  id="frame-pdf"
-                >
-                  Faça download do PDF
-                  <!-- alt : <a href="mensagem.mediaUrl"></a> -->
-                </iframe>
+                  :width="330"
+                  :height="400"
+                  class="q-mt-sm"
+                />
                 <q-btn
+                  v-if=" !isPDF(mensagem.mediaUrl) "
                   type="a"
                   :color=" $q.dark.isActive ? '' : 'grey-3' "
                   no-wrap
@@ -294,7 +280,6 @@
                   dense
                   class="q-mt-sm text-center text-black btn-rounded  text-grey-9 ellipsis"
                   download
-                  :target=" isPDF(mensagem.mediaUrl) ? '_blank' : '' "
                   :href=" mensagem.mediaUrl "
                 >
                   <q-tooltip
@@ -327,7 +312,7 @@
             </div>
           </div>
         </q-chat-message>
-      </template>
+      </div>
     </transition-group>
 <q-dialog v-model="showModaledit">
   <q-card>
@@ -353,6 +338,7 @@ import VueEasyLightbox from 'vue-easy-lightbox'
 import MensagemRespondida from './MensagemRespondida'
 import ContatoCard from './ContatoCard.vue'
 import ContatoModal from './ContatoModal.vue'
+import PDFViewer from 'src/components/PDFViewer.vue'
 const downloadImageCors = axios.create({
   baseURL: process.env.VUE_URL_API,
   timeout: 20000,
@@ -421,7 +407,8 @@ export default {
     VueEasyLightbox,
     MensagemRespondida,
     ContatoCard,
-    ContatoModal
+    ContatoModal,
+    PDFViewer
   },
   methods: {
     openContactModal (contact) {
@@ -437,10 +424,25 @@ export default {
     },
     async salvarMensagem () {
       try {
+        // Garantir que o texto não tenha formatação do nome do usuário
+        let textoParaEditar = this.mensagemAtual.body || ''
+
+        // Remover padrão "*Nome*: " ou "*Nome*:\n " do início da mensagem
+        // Suporta: "*Nome*: texto", "*Nome*:\n texto", "*Nome Completo*: texto"
+        const regexNomeUsuario = /^\*[^*]+\*:\s*\n?\s*/
+        textoParaEditar = textoParaEditar.replace(regexNomeUsuario, '')
+
+        // Remover prefixos de edição se existirem
+        textoParaEditar = textoParaEditar.replace(/^Editada:\s*/i, '')
+        textoParaEditar = textoParaEditar.replace(/^Mensagem anterior:\s*/i, '')
+
+        // Remover linhas que contenham apenas o nome do usuário (formato "Nome:")
+        textoParaEditar = textoParaEditar.replace(/^[^*]*:\s*$/gm, '')
+
         const updatedMessage = await EditarMensagem({
           id: this.mensagemAtual.id,
           messageId: this.mensagemAtual.messageId,
-          body: this.mensagemAtual.body
+          body: textoParaEditar.trim()
         })
         console.log('Mensagem editada com sucesso')
         this.showModaledit = false
@@ -457,7 +459,26 @@ export default {
       }
     },
     AbrirmodaleditarMensagem (mensagem) {
-      this.mensagemAtual = mensagem
+      // Extrair apenas o texto original, removendo formatação do nome do usuário
+      let textoOriginal = mensagem.body || ''
+
+      // Remover padrão "*Nome*: " ou "*Nome*:\n " do início da mensagem
+      // Suporta: "*Nome*: texto", "*Nome*:\n texto", "*Nome Completo*: texto"
+      const regexNomeUsuario = /^\*[^*]+\*:\s*\n?\s*/
+      textoOriginal = textoOriginal.replace(regexNomeUsuario, '')
+
+      // Se a mensagem foi editada anteriormente, remover prefixos
+      textoOriginal = textoOriginal.replace(/^Editada:\s*/i, '')
+      textoOriginal = textoOriginal.replace(/^Mensagem anterior:\s*/i, '')
+
+      // Remover linhas que contenham apenas o nome do usuário (formato "Nome:")
+      textoOriginal = textoOriginal.replace(/^[^*]*:\s*$/gm, '')
+
+      // Criar cópia da mensagem com o texto limpo
+      this.mensagemAtual = {
+        ...mensagem,
+        body: textoOriginal.trim()
+      }
       this.showModaledit = true
     },
     verificarEncaminharMensagem (mensagem) {

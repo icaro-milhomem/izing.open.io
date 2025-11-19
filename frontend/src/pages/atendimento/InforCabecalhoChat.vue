@@ -39,6 +39,20 @@
           <q-item-section id="InfoCabecalhoChat">
             <q-item-label class="text-bold">
               {{ Value(cticket.contact, 'name') }}
+              <!-- Logo do canal -->
+              <q-avatar
+                v-if="cticket.whatsapp && cticket.whatsapp.logo && cticket.whatsapp.logo.trim() !== ''"
+                size="20px"
+                class="q-ml-xs"
+              >
+                <img :src="cticket.whatsapp.logo" />
+              </q-avatar>
+              <q-icon
+                v-else-if="cticket.channel"
+                size="20px"
+                class="q-ml-xs"
+                :name="`img:${cticket.channel}-logo.png`"
+              />
               <q-skeleton
                 v-if="!Value(cticket.contact, 'name')"
                 animation="none"
@@ -263,7 +277,15 @@ export default {
         contact: { profilePicUrl: '', name: '' },
         user: { name: '' }
       }
-      return Object.keys(this.ticketFocado).includes('contact') ? this.ticketFocado : infoDefault
+      const ticket = Object.keys(this.ticketFocado).includes('contact') ? this.ticketFocado : infoDefault
+      // Debug: verificar se logo está presente
+      if (ticket.whatsapp) {
+        console.log('Whatsapp completo:', JSON.stringify(ticket.whatsapp, null, 2))
+        console.log('Logo value:', ticket.whatsapp.logo)
+        console.log('Logo type:', typeof ticket.whatsapp.logo)
+        console.log('Logo truthy:', !!ticket.whatsapp.logo)
+      }
+      return ticket
     }
   },
   methods: {

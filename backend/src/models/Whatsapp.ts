@@ -161,6 +161,11 @@ class Whatsapp extends Model<Whatsapp> {
   @Column(DataType.STRING)
   wavoip: string;
 
+  @Default(null)
+  @AllowNull
+  @Column(DataType.TEXT)
+  logo: string;
+
   @ForeignKey(() => QueueModel)
   @Column
   queueId: number;

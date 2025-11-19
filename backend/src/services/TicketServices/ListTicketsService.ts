@@ -192,7 +192,7 @@ const ListTicketsService = async ({
   c."name",
   u."name" as username,
   q.queue,
-  jsonb_build_object('id', w.id, 'name', w."name") whatsapp,
+  jsonb_build_object('id', w.id, 'name', w."name", 'logo', w."logo") whatsapp,
   t.*
   from "Tickets" t
   inner join "Whatsapps" w on (w.id = t."whatsappId")

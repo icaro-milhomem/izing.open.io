@@ -105,7 +105,7 @@ export default {
       },
       loading: false,
       columns: [
-        { name: 'tenantId', label: 'Empresa', field: 'tenant', align: 'left', format: v => `${v.id} - ${v.name}` },
+        { name: 'tenantId', label: 'Empresa', field: 'tenant', align: 'left', format: v => v && v.id && v.name ? `${v.id} - ${v.name}` : '' },
         { name: 'id', label: 'ID', field: 'id', align: 'left' },
         { name: 'name', label: 'Nome', field: 'name', align: 'left' },
         { name: 'email', label: 'E-mail', field: 'email', align: 'left' },

@@ -8,6 +8,7 @@ import { logger } from "../utils/logger";
 import SyncUnreadMessagesWbot from "../services/WbotServices/SyncUnreadMessagesWbot";
 import Queue from "./Queue";
 import AppError from "../errors/AppError";
+import { StartWhatsAppSession } from "../services/WbotServices/StartWhatsAppSession";
 const minimalArgs = require('./minimalArgs');
 
 interface Session extends Client {
@@ -63,7 +64,7 @@ const checkMessages = async (wbot: Session, tenantId: number | string) => {
     }
   } catch (error) {
     const strError = String(error);
-    // se a sessão tiver sido fechada, limpar a checagem de mensagens e bot
+    // se a sessï¿½o tiver sido fechada, limpar a checagem de mensagens e bot
     if (strError.indexOf("Session closed.") !== -1) {
       logger.error(
         `BOT Whatsapp desconectado. Tenant: ${tenantId}:: BOT ID: ${wbot.id}`

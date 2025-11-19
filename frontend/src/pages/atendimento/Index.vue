@@ -207,6 +207,64 @@
                       label="Somente Tickets não atribuidos (sem usuário definido)"
                       @input="debounce(BuscarTicketFiltro(), 700)"
                     />
+                    <q-separator class="q-my-md" />
+                    <q-select
+                      rounded
+                      dense
+                      outlined
+                      hide-bottom-space
+                      emit-value
+                      map-options
+                      clearable
+                      label="Filtrar por Conexão WhatsApp"
+                      color="primary"
+                      v-model="selectedWhatsapp"
+                      :options="availableWhatsapps"
+                      option-value="value"
+                      option-label="label"
+                      @input="debounce(BuscarTicketFiltro(), 700)"
+                      input-style="width: 300px; max-width: 300px;"
+                    >
+                      <template v-slot:option="scope">
+                        <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
+                          <q-item-section avatar>
+                            <q-avatar
+                              v-if="scope.opt.logo && scope.opt.logo.trim() !== ''"
+                              size="32px"
+                            >
+                              <img :src="scope.opt.logo" />
+                            </q-avatar>
+                            <q-icon
+                              v-else
+                              :name="scope.opt.icon"
+                              size="24px"
+                            />
+                          </q-item-section>
+                          <q-item-section>
+                            <q-item-label>{{ scope.opt.label }}</q-item-label>
+                          </q-item-section>
+                        </q-item>
+                      </template>
+                      <template v-slot:selected>
+                        <div v-if="selectedWhatsapp && selectedWhatsapp !== 'all'" class="row items-center no-wrap">
+                          <q-avatar
+                            v-if="getWhatsappLogo(selectedWhatsapp)"
+                            size="28px"
+                            class="q-mr-sm"
+                          >
+                            <img :src="getWhatsappLogo(selectedWhatsapp)" />
+                          </q-avatar>
+                          <q-icon
+                            v-else
+                            :name="getWhatsappIcon(selectedWhatsapp)"
+                            size="20px"
+                            class="q-mr-sm"
+                          />
+                          <span>{{ getWhatsappLabel(selectedWhatsapp) }}</span>
+                        </div>
+                        <span v-else>Todas as conexões</span>
+                      </template>
+                    </q-select>
                   </div>
                   <q-separator
                     class="q-my-md"
@@ -262,6 +320,35 @@
         >
           <!-- <q-separator /> -->
           <div>
+            <!-- Filtro rápido de conexão WhatsApp -->
+            <div v-if="availableWhatsapps.length > 0" class="q-pa-sm q-mb-xs">
+              <div class="row q-gutter-xs">
+                <q-btn
+                  v-for="whatsapp in availableWhatsapps"
+                  :key="whatsapp.value"
+                  :color="selectedWhatsapp === whatsapp.value ? 'primary' : 'grey-5'"
+                  :text-color="selectedWhatsapp === whatsapp.value ? 'white' : 'grey-9'"
+                  size="sm"
+                  rounded
+                  unelevated
+                  @click="selectedWhatsapp = whatsapp.value"
+                  class="col"
+                >
+                  <template v-if="whatsapp.logo && whatsapp.logo.trim() !== ''">
+                    <q-avatar size="28px" class="q-mr-sm">
+                      <img :src="whatsapp.logo" />
+                    </q-avatar>
+                  </template>
+                  <q-icon
+                    v-else
+                    :name="whatsapp.icon"
+                    size="20px"
+                    class="q-mr-sm"
+                  />
+                  <span>{{ whatsapp.label }}</span>
+                </q-btn>
+              </div>
+            </div>
             <div class="tab-container">
               <q-tabs v-model="selectedTab" class="tab-scroll">
                 <q-tab name="open" v-if="openTickets.length > 0">
@@ -831,6 +918,7 @@ export default {
       usuario,
       usuarios: [],
       selectedTab: 'open',
+      selectedWhatsapp: 'all', // Filtro por conexão WhatsApp ('all' = todos)
       username,
       modalUsuario: false,
       toolbarSearch: true,
@@ -916,21 +1004,111 @@ export default {
     cIsExtraInfo () {
       return this.ticketFocado?.contact?.extraInfo?.length > 0
     },
+    availableWhatsapps () {
+      // Extrair conexões WhatsApp únicas dos tickets e combinar com lista de whatsapps do store
+      const whatsappsMap = new Map()
+
+      // Primeiro, adicionar todos os whatsapps do store (têm informações completas incluindo logo)
+      this.whatsapps.forEach(whatsapp => {
+        if (whatsapp && whatsapp.id) {
+          whatsappsMap.set(whatsapp.id, {
+            id: whatsapp.id,
+            name: whatsapp.name || `WhatsApp ${whatsapp.id}`,
+            channel: whatsapp.type || 'whatsapp',
+            logo: whatsapp.logo || null
+          })
+        }
+      })
+
+      // Depois, atualizar com dados dos tickets (pode ter informações mais recentes)
+      this.tickets.forEach(ticket => {
+        if (ticket.whatsapp && ticket.whatsapp.id) {
+          const key = ticket.whatsapp.id
+          const existing = whatsappsMap.get(key)
+          if (existing) {
+            // Atualizar logo se não existir ou se o ticket tiver uma logo mais recente
+            if (!existing.logo && ticket.whatsapp.logo) {
+              existing.logo = ticket.whatsapp.logo
+            }
+          } else {
+            // Adicionar novo whatsapp encontrado nos tickets
+            whatsappsMap.set(key, {
+              id: ticket.whatsapp.id,
+              name: ticket.whatsapp.name || `WhatsApp ${ticket.whatsapp.id}`,
+              channel: ticket.channel,
+              logo: ticket.whatsapp.logo || null
+            })
+          }
+        }
+      })
+
+      const whatsapps = Array.from(whatsappsMap.values())
+
+      // Debug: verificar logos
+      console.log('Whatsapps do store:', this.whatsapps)
+      console.log('Whatsapps mapeados:', whatsapps)
+      whatsapps.forEach(w => {
+        console.log(`Whatsapp ${w.id} (${w.name}): logo =`, w.logo)
+      })
+
+      return [
+        { value: 'all', label: 'Todas as conexões', icon: 'mdi-filter-variant', logo: null },
+        ...whatsapps.map(whatsapp => ({
+          value: whatsapp.id,
+          label: whatsapp.name,
+          icon: whatsapp.channel ? `img:${whatsapp.channel}-logo.png` : 'mdi-whatsapp',
+          logo: whatsapp.logo || null
+        }))
+      ]
+    },
     openTickets () {
-      console.log(this.tickets)
-      return this.tickets.filter(ticket => ticket.status === 'open' && !ticket.isGroup)
+      // console.log(this.tickets)
+      let filtered = this.tickets.filter(ticket => ticket.status === 'open' && !ticket.isGroup)
+      if (this.selectedWhatsapp && this.selectedWhatsapp !== 'all') {
+        filtered = filtered.filter(ticket => ticket.whatsapp && ticket.whatsapp.id === this.selectedWhatsapp)
+      }
+      return filtered
     },
     pendingTickets () {
-      return this.tickets.filter(ticket => ticket.status === 'pending' && !ticket.isGroup)
+      let filtered = this.tickets.filter(ticket => ticket.status === 'pending' && !ticket.isGroup)
+      if (this.selectedWhatsapp && this.selectedWhatsapp !== 'all') {
+        filtered = filtered.filter(ticket => ticket.whatsapp && ticket.whatsapp.id === this.selectedWhatsapp)
+      }
+      return filtered
     },
     closedTickets () {
-      return this.tickets.filter(ticket => ticket.status === 'closed' && !ticket.isGroup)
+      let filtered = this.tickets.filter(ticket => ticket.status === 'closed' && !ticket.isGroup)
+      if (this.selectedWhatsapp && this.selectedWhatsapp !== 'all') {
+        filtered = filtered.filter(ticket => ticket.whatsapp && ticket.whatsapp.id === this.selectedWhatsapp)
+      }
+      return filtered
     },
     groupTickets () {
-      return this.tickets.filter(ticket => ticket.isGroup)
+      let filtered = this.tickets.filter(ticket => ticket.isGroup)
+      if (this.selectedWhatsapp && this.selectedWhatsapp !== 'all') {
+        filtered = filtered.filter(ticket => ticket.whatsapp && ticket.whatsapp.id === this.selectedWhatsapp)
+      }
+      return filtered
     }
   },
   methods: {
+    getWhatsappIcon (whatsappId) {
+      const whatsapp = this.availableWhatsapps.find(w => w.value === whatsappId)
+      return whatsapp ? whatsapp.icon : 'mdi-filter-variant'
+    },
+    getWhatsappLabel (whatsappId) {
+      const whatsapp = this.availableWhatsapps.find(w => w.value === whatsappId)
+      return whatsapp ? whatsapp.label : 'Todas as conexões'
+    },
+    getWhatsappLogo (whatsappId) {
+      const whatsapp = this.availableWhatsapps.find(w => w.value === whatsappId)
+      if (whatsapp && whatsapp.logo) {
+        console.log('Logo encontrada para', whatsappId, ':', whatsapp.logo)
+        return whatsapp.logo.trim() !== '' ? whatsapp.logo : null
+      }
+      console.log('Logo NÃO encontrada para', whatsappId)
+      return null
+    },
     handlerNotifications (data) {
       const options = {
         body: `${data.body} - ${format(new Date(), 'HH:mm')}`,
@@ -1166,12 +1344,12 @@ export default {
         if (this.$q.screen.lt.md && ticket.status !== 'pending') {
           this.$root.$emit('infor-cabecalo-chat:acao-menu')
         }
-        console.log('before - AbrirChatMensagens', ticket)
+        // console.log('before - AbrirChatMensagens', ticket)
         this.$store.commit('SET_HAS_MORE', true)
         this.$store.dispatch('AbrirChatMensagens', ticket)
       }
     } else {
-      console.log('chat-empty')
+      // console.log('chat-empty')
       this.$router.push({ name: 'chat-empty' })
     }
   },

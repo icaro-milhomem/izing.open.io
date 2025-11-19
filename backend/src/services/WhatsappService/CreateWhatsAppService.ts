@@ -17,6 +17,7 @@ interface Request {
   farewellMessage?: string;
   type: "waba" | "instagram" | "telegram" | "whatsapp" | "messenger";
   wavoip?: string;
+  logo?: string;
 }
 
 interface Response {
@@ -37,6 +38,7 @@ const CreateWhatsAppService = async ({
   fbPageId,
   farewellMessage,
   wavoip,
+  logo,
   isDefault = false
 }: Request): Promise<Response> => {
   if (type === "waba" && (!tokenAPI || !wabaBSP)) {
@@ -82,6 +84,7 @@ const CreateWhatsAppService = async ({
       fbPageId,
       farewellMessage,
       wavoip,
+      logo
     });
     const io = getIO();
     io.emit(`${tenantId}:whatsapp`, {

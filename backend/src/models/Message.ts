@@ -62,9 +62,21 @@ class Message extends Model<Message> {
   @Column(DataType.STRING)
   get mediaUrl(): string | null {
     if (this.getDataValue("mediaUrl")) {
-      const { BACKEND_URL } = process.env;
+      const { BACKEND_URL, PORT } = process.env;
       const value = this.getDataValue("mediaUrl");
-      return `${BACKEND_URL}:${process.env.PROXY_PORT}/public/${value}`;
+      // Usar PORT (porta real do servidor) ao invés de PROXY_PORT
+      const port = PORT || '3100';
+      // Extrair apenas o protocolo e host do BACKEND_URL, ignorando porta antiga
+      let baseUrl = BACKEND_URL || 'http://localhost';
+      // Remover porta se existir e adicionar a porta correta
+      if (baseUrl.includes('://')) {
+        const urlParts = baseUrl.split('://');
+        const hostParts = urlParts[1].split(':');
+        baseUrl = `${urlParts[0]}://${hostParts[0]}:${port}`;
+      } else {
+        baseUrl = `${baseUrl}:${port}`;
+      }
+      return `${baseUrl}/public/${value}`;
     }
     return null;
   }

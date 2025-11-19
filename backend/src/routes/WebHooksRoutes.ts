@@ -2,6 +2,7 @@ import express from "express";
 // import isAuth from "../middleware/isAuth";
 
 import * as HooksController from "../controllers/WebHooksController";
+import WuzapiWebhookController from "../controllers/WuzapiWebhookController";
 
 const webHooksRoutes = express.Router();
 
@@ -19,6 +20,12 @@ webHooksRoutes.get(
 webHooksRoutes.post(
   "/fb-messenger-hooks/:token",
   HooksController.ReceivedRequestMessenger
+);
+
+// Webhook WUZAPI
+webHooksRoutes.post(
+  "/wuzapi/:instanceId",
+  WuzapiWebhookController
 );
 
 export default webHooksRoutes;

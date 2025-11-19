@@ -94,20 +94,20 @@ export default {
               includeNotQueueDefined: true
               // date: new Date(),
             }
-            console.log('Definiu parametros')
+            // console.log('Definiu parametros')
             try {
-              console.log('try')
+              // console.log('try')
               const { data } = await ConsultarTickets(params)
-              console.log('try 1')
+              // console.log('try 1')
               this.countTickets = data.count // count total de tickets no status
-              console.log('try 2')
+              // console.log('try 2')
               // this.ticketsList = data.tickets
               this.$store.commit('UPDATE_NOTIFICATIONS', data)
-              console.log('try 3')
+              // console.log('try 3')
               // this.$store.commit('SET_HAS_MORE', data.hasMore)
               // console.log(this.notifications)
             } catch (err) {
-              console.log('error try')
+              // console.log('error try')
               this.$notificarErro('Algum problema', err)
               console.error(err)
             }
@@ -156,11 +156,12 @@ export default {
             verify.data.tickets.forEach((element) => { pass_noti = (element.id == data.payload.id ? true : pass_noti) })
             // Exibe Notificação
             if (pass_noti) {
+              // Criar notificação (armazenar para evitar erro de lint no-new)
+              // eslint-disable-next-line no-unused-vars
               const message = new self.Notification('Novo cliente pendente', {
                 body: 'Cliente: ' + data.payload.contact.name,
                 tag: 'simple-push-demo-notification'
               })
-              console.log(message)
             }
           }
         })
