@@ -29,6 +29,18 @@ export default {
     if (usuario?.configs?.isDark) {
       this.$q.dark.set(usuario?.configs?.isDark)
     }
+    // Aplicar tema personalizado
+    if (usuario?.configs?.theme) {
+      const root = document.documentElement
+      root.style.setProperty('--q-primary', usuario.configs.theme.primary)
+      root.style.setProperty('--q-secondary', usuario.configs.theme.secondary)
+      root.style.setProperty('--q-accent', usuario.configs.theme.accent)
+      if (this.$q.colors && this.$q.colors.setBrand) {
+        this.$q.colors.setBrand('primary', usuario.configs.theme.primary)
+        this.$q.colors.setBrand('secondary', usuario.configs.theme.secondary)
+        this.$q.colors.setBrand('accent', usuario.configs.theme.accent)
+      }
+    }
     //   document.onclick = function () {
     //     this.idleSecondsCounter = 0
     //   }

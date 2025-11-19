@@ -6,6 +6,18 @@
         class="text-bold text-h6 q-mb-lg"
       >Configurações</q-item-label>
 
+      <!-- Editor de Tema -->
+      <q-expansion-item
+        icon="mdi-palette"
+        label="Personalização de Tema"
+        header-class="text-weight-medium"
+        class="q-mb-md"
+      >
+        <ThemeEditor />
+      </q-expansion-item>
+
+      <q-separator spaced />
+
       <q-item-label
         caption
         class="q-mt-lg q-pl-sm"
@@ -204,8 +216,13 @@
 <script>
 import { ListarChatFlow } from 'src/service/chatFlow'
 import { ListarConfiguracoes, AlterarConfiguracao } from 'src/service/configuracoes'
+import ThemeEditor from 'src/components/ThemeEditor.vue'
+
 export default {
   name: 'IndexConfiguracoes',
+  components: {
+    ThemeEditor
+  },
   data () {
     return {
       userProfile: 'user',

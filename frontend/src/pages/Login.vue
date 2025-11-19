@@ -1,49 +1,49 @@
 <template>
-  <q-layout class="brick-classic-layout">
+  <q-layout class="modern-login-layout">
     <q-page-container>
-      <div class="brick-pattern"></div>
-      <div class="tetris-game">
-        <div v-for="(piece, index) in tetrisPieces" :key="index" class="tetris-piece" :class="piece.color">
-          <div v-for="(row, rowIndex) in piece.shape" :key="rowIndex" class="piece-row">
-            <div v-for="(cell, cellIndex) in row" :key="cellIndex"
-              class="piece-block"
-              v-if="cell === 1"
-              :style="{
-                animationDelay: `${index * 0.5}s`,
-                left: `${piece.x + cellIndex * 30}px`,
-                top: `${piece.y + rowIndex * 30}px`
-              }">
-              <div class="piece-inner"></div>
-            </div>
-          </div>
-        </div>
+      <!-- Background com gradiente animado -->
+      <div class="animated-background">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
       </div>
+
+      <!-- Grid pattern sutil -->
+      <div class="grid-pattern"></div>
+
       <q-page class="login-page flex flex-center">
         <div class="login-container">
           <div class="login-box">
+            <!-- Logo Section -->
             <div class="logo-container">
-              <q-img
-                src="/logo_izing.png"
-                spinner-color="primary"
-                style="width: 300px; height: auto"
-                class="q-mb-lg q-px-md"
-              />
-              <div class="logo-text">Izing</div>
+              <div class="logo-wrapper">
+                <q-img
+                  src="/logo_izing.png"
+                  spinner-color="primary"
+                  style="width: 180px; height: auto"
+                  class="q-mb-md"
+                />
+              </div>
+              <h1 class="login-title">Bem-vindo</h1>
+              <p class="login-subtitle">Entre com suas credenciais para continuar</p>
             </div>
 
-            <q-form @submit="fazerLogin" class="q-gutter-md">
+            <!-- Form Section -->
+            <q-form @submit="fazerLogin" class="login-form q-gutter-md">
               <q-input
                 v-model="form.email"
                 label="Email"
                 :rules="[val => !!val || 'Email é obrigatório']"
                 outlined
-                class="input-field"
+                rounded
+                class="modern-input"
                 @blur="$v.form.email.$touch"
                 :error="$v.form.email.$error"
                 error-message="Deve ser um e-mail válido."
+                bg-color="white"
               >
                 <template v-slot:prepend>
-                  <q-icon name="mdi-email" color="primary" />
+                  <q-icon name="mdi-email-outline" color="primary" size="20px" />
                 </template>
               </q-input>
 
@@ -53,34 +53,48 @@
                 :type="isPwd ? 'password' : 'text'"
                 :rules="[val => !!val || 'Senha é obrigatória']"
                 outlined
-                class="input-field"
+                rounded
+                class="modern-input"
                 @blur="$v.form.password.$touch"
                 :error="$v.form.password.$error"
                 error-message="Senha é obrigatória"
+                bg-color="white"
               >
                 <template v-slot:prepend>
-                  <q-icon name="mdi-lock" color="primary" />
+                  <q-icon name="mdi-lock-outline" color="primary" size="20px" />
                 </template>
                 <template v-slot:append>
                   <q-icon
-                    :name="isPwd ? 'mdi-eye-off' : 'mdi-eye'"
+                    :name="isPwd ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
                     class="cursor-pointer"
                     @click="isPwd = !isPwd"
-                    color="primary"
+                    color="grey-6"
+                    size="20px"
                   />
                 </template>
               </q-input>
 
-              <div>
-                <q-btn
-                  label="Entrar"
-                  type="submit"
-                  color="primary"
-                  class="full-width login-button"
-                  :loading="loading"
-                />
-              </div>
+              <q-btn
+                label="Entrar"
+                type="submit"
+                color="primary"
+                class="full-width login-button"
+                :loading="loading"
+                unelevated
+                rounded
+                size="lg"
+              >
+                <template v-slot:loading>
+                  <q-spinner-hourglass class="on-left" />
+                  Entrando...
+                </template>
+              </q-btn>
             </q-form>
+
+            <!-- Footer -->
+            <div class="login-footer">
+              <p class="footer-text">© 2024 Izing. Todos os direitos reservados.</p>
+            </div>
           </div>
         </div>
       </q-page>
@@ -100,43 +114,8 @@ export default {
         password: null
       },
       isPwd: true,
-      loading: false,
-      tetrisPieces: [
-        {
-          shape: [[1, 1, 1], [0, 1, 0]],
-          color: 'red',
-          x: 50,
-          y: -60
-        },
-        {
-          shape: [[1, 1], [1, 1]],
-          color: 'green',
-          x: 150,
-          y: -120
-        },
-        {
-          shape: [[1, 1, 1], [1, 0, 0]],
-          color: 'yellow',
-          x: 250,
-          y: -180
-        },
-        {
-          shape: [[1, 1, 0], [0, 1, 1]],
-          color: 'blue',
-          x: 350,
-          y: -240
-        },
-        {
-          shape: [[1, 1], [0, 1], [0, 1]],
-          color: 'purple',
-          x: 450,
-          y: -300
-        }
-      ]
+      loading: false
     }
-  },
-  mounted () {
-    this.startTetrisAnimation()
   },
   validations: {
     form: {
@@ -145,21 +124,15 @@ export default {
     }
   },
   methods: {
-    startTetrisAnimation () {
-      setInterval(() => {
-        this.tetrisPieces.forEach(piece => {
-          if (piece.y < window.innerHeight - 150) {
-            piece.y += 2
-          } else {
-            piece.y = -60
-          }
-        })
-      }, 50)
-    },
     fazerLogin () {
       this.$v.form.$touch()
       if (this.$v.form.$error) {
-        this.$q.notify('Informe usuário e senha corretamente.')
+        this.$q.notify({
+          type: 'negative',
+          message: 'Informe usuário e senha corretamente.',
+          position: 'top',
+          timeout: 3000
+        })
         return
       }
       this.loading = true
@@ -171,141 +144,199 @@ export default {
           console.error('exStore', err)
           this.loading = false
         })
-    },
-    getBrickColor (row, col) {
-      const index = (row + col) % this.brickColors.length
-      return this.brickColors[index]
     }
   }
 }
 </script>
 
-<style lang="sass">
-.brick-classic-layout
-  background: linear-gradient(135deg, #2C3E50 0%, #3498DB 100%)
+<style lang="sass" scoped>
+.modern-login-layout
+  background: linear-gradient(135deg, var(--q-primary, #667eea) 0%, var(--q-accent, #764ba2) 50%, #f093fb 100%)
   min-height: 100vh
   position: relative
   overflow: hidden
 
-.brick-pattern
+.animated-background
   position: absolute
-  top: 0
-  left: 0
-  right: 0
-  bottom: 0
-  background-image: linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%), linear-gradient(-45deg, rgba(255,255,255,0.1) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.1) 75%), linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.1) 75%)
-  background-size: 20px 20px
-  opacity: 0.3
-
-.tetris-game
-  position: fixed
   top: 0
   left: 0
   width: 100%
   height: 100%
-  z-index: 1
+  z-index: 0
   overflow: hidden
 
-.tetris-piece
+.gradient-orb
   position: absolute
-  transition: all 0.05s linear
+  border-radius: 50%
+  filter: blur(80px)
+  opacity: 0.5
+  animation: float 20s ease-in-out infinite
 
-.piece-block
+.orb-1
+  width: 500px
+  height: 500px
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)
+  top: -200px
+  left: -200px
+  animation-delay: 0s
+
+.orb-2
+  width: 400px
+  height: 400px
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)
+  bottom: -150px
+  right: -150px
+  animation-delay: 5s
+
+.orb-3
+  width: 350px
+  height: 350px
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)
+  top: 50%
+  right: 10%
+  animation-delay: 10s
+
+@keyframes float
+  0%, 100%
+    transform: translate(0, 0) scale(1)
+  33%
+    transform: translate(30px, -30px) scale(1.1)
+  66%
+    transform: translate(-20px, 20px) scale(0.9)
+
+.grid-pattern
   position: absolute
-  width: 28px
-  height: 28px
-  border-radius: 4px
-  animation: fallDown 2s linear infinite
-  transition: all 0.05s linear
-
-.piece-inner
+  top: 0
+  left: 0
   width: 100%
   height: 100%
-  border-radius: 3px
-  box-shadow: inset 0 0 8px rgba(255,255,255,0.5)
-  background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%)
-
-.red .piece-block
-  background-color: #ff4444
-  border: 2px solid #ff6666
-
-.green .piece-block
-  background-color: #44ff44
-  border: 2px solid #66ff66
-
-.blue .piece-block
-  background-color: #4444ff
-  border: 2px solid #6666ff
-
-.yellow .piece-block
-  background-color: #ffff44
-  border: 2px solid #ffff66
-
-.purple .piece-block
-  background-color: #9944ff
-  border: 2px solid #aa66ff
-
-@keyframes fallDown
-  0%
-    transform: translateY(-100vh) rotate(0deg)
-  100%
-    transform: translateY(100vh) rotate(360deg)
+  background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)
+  background-size: 50px 50px
+  z-index: 1
+  opacity: 0.4
 
 .login-page
   position: relative
   z-index: 2
   min-height: 100vh
-  display: flex
-  align-items: center
-  justify-content: center
+  padding: 20px
 
 .login-container
   width: 100%
-  max-width: 400px
-  padding: 20px
+  max-width: 440px
+  animation: slideUpFade 0.6s ease-out
 
 .login-box
-  background: rgba(255, 255, 255, 0.95)
-  border-radius: 16px
-  padding: 40px
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
-  backdrop-filter: blur(10px)
-  animation: fadeIn 0.5s ease-out
-  border: 1px solid rgba(255, 255, 255, 0.2)
-  transition: all 0.3s ease
-  z-index: 2
+  background: rgba(255, 255, 255, 0.98)
+  backdrop-filter: blur(20px)
+  border-radius: 24px
+  padding: 48px 40px
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.3)
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1)
   position: relative
+  overflow: hidden
+
+.login-box::before
+  content: ''
+  position: absolute
+  top: 0
+  left: 0
+  right: 0
+  height: 4px
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%)
 
 .login-box:hover
-  transform: translateY(-5px)
-  box-shadow: 0 15px 30px rgba(0,0,0,0.1)
+  transform: translateY(-4px)
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.3)
 
 .logo-container
   text-align: center
   margin-bottom: 40px
-  animation: slideDown 0.5s ease-out
 
-.logo-text
+.logo-wrapper
+  display: flex
+  justify-content: center
+  margin-bottom: 24px
+  animation: fadeInDown 0.6s ease-out
+
+.login-title
   font-size: 32px
-  font-weight: bold
-  color: #1a237e
-  text-transform: uppercase
-  letter-spacing: 2px
-  margin-top: 16px
+  font-weight: 700
+  color: #1a1a1a
+  margin: 0 0 8px 0
+  letter-spacing: -0.5px
+  animation: fadeInDown 0.6s ease-out 0.1s both
 
-.input-field
-  margin-bottom: 20px
-  animation: slideIn 0.5s ease-out
+.login-subtitle
+  font-size: 15px
+  color: #6b7280
+  margin: 0
+  font-weight: 400
+  animation: fadeInDown 0.6s ease-out 0.2s both
+
+.login-form
+  margin-top: 32px
+
+.modern-input
+  margin-bottom: 4px
+  animation: fadeInUp 0.6s ease-out 0.3s both
+
+.modern-input:nth-child(2)
+  animation-delay: 0.4s
 
 .login-button
-  height: 48px
+  height: 52px
   font-size: 16px
-  font-weight: bold
-  text-transform: uppercase
-  letter-spacing: 1px
-  border-radius: 24px
-  margin-top: 20px
-  animation: slideUp 0.5s ease-out
+  font-weight: 600
+  letter-spacing: 0.5px
+  margin-top: 32px
+  text-transform: none
+  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4)
+  transition: all 0.3s ease
+  animation: fadeInUp 0.6s ease-out 0.5s both
+
+.login-button:hover
+  transform: translateY(-2px)
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5)
+
+.login-button:active
+  transform: translateY(0)
+
+.login-footer
+  margin-top: 32px
+  text-align: center
+  padding-top: 24px
+  border-top: 1px solid #e5e7eb
+  animation: fadeIn 0.6s ease-out 0.6s both
+
+.footer-text
+  font-size: 13px
+  color: #9ca3af
+  margin: 0
+
+@keyframes slideUpFade
+  from
+    opacity: 0
+    transform: translateY(30px)
+  to
+    opacity: 1
+    transform: translateY(0)
+
+@keyframes fadeInDown
+  from
+    opacity: 0
+    transform: translateY(-20px)
+  to
+    opacity: 1
+    transform: translateY(0)
+
+@keyframes fadeInUp
+  from
+    opacity: 0
+    transform: translateY(20px)
+  to
+    opacity: 1
+    transform: translateY(0)
 
 @keyframes fadeIn
   from
@@ -313,27 +344,18 @@ export default {
   to
     opacity: 1
 
-@keyframes slideDown
-  from
-    transform: translateY(-20px)
-    opacity: 0
-  to
-    transform: translateY(0)
-    opacity: 1
+// Responsive
+@media (max-width: 600px)
+  .login-box
+    padding: 40px 24px
+    border-radius: 20px
 
-@keyframes slideIn
-  from
-    transform: translateX(-20px)
-    opacity: 0
-  to
-    transform: translateX(0)
-    opacity: 1
+  .login-title
+    font-size: 28px
 
-@keyframes slideUp
-  from
-    transform: translateY(20px)
-    opacity: 0
-  to
-    transform: translateY(0)
-    opacity: 1
+  .login-subtitle
+    font-size: 14px
+
+  .login-container
+    max-width: 100%
 </style>
