@@ -35,12 +35,10 @@ const VerifyMessage = async (
   await ticket.update({
     lastMessage:
       msg.type === "location"
-        ? `Localization - ${msg.location.latitude}, ${msg.location.longitude}`
-        : msg.body
-  });
-
-  await ticket.update({
-    lastMessage: msg.body,
+        ? msg.location.description
+          ? `Localization - ${msg.location.description}`
+          : `Localization - ${msg.location.latitude}, ${msg.location.longitude}`
+        : msg.body,
     lastMessageAt: new Date().getTime(),
     answered: msg.fromMe || false
   });

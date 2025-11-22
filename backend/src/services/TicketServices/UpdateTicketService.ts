@@ -9,6 +9,7 @@ import socketEmit from "../../helpers/socketEmit";
 import CreateLogTicketService from "./CreateLogTicketService";
 import Message from "../../models/Message";
 import SendMessageSystemProxy from "../../helpers/SendMessageSystemProxy";
+import { StartWhatsAppSession } from "../WbotServices/StartWhatsAppSession";
 import { logger } from "../../utils/logger";
 
 // Função para verificar se a mensagem contém código PIX
@@ -89,7 +90,12 @@ const UpdateTicketService = async ({
     await ticket.update({ lastMessage: messageWithoutSignature.trim() });
   }
 
-  await SetTicketMessagesAsRead(ticket);
+  try {
+    await SetTicketMessagesAsRead(ticket);
+  } catch (error) {
+    logger.warn(`Error setting ticket messages as read for ticket ${ticketId}: ${error}`);
+    // Não bloquear a atualização do ticket se houver erro ao marcar mensagens como lidas
+  }
 
   // Variavel para notificar usuário de novo contato como pendente
   const toPending =
@@ -124,7 +130,7 @@ const UpdateTicketService = async ({
 
     // Adicionar mensagem personalizada do atendente e enviar para o cliente
     const user = await User.findByPk(userId);
-    if (user) {
+    if (user && ticket.whatsappId) {
       // Verificar se o WhatsApp está realmente conectado antes de enviar
       const whatsapp = await Whatsapp.findByPk(ticket.whatsappId);
       if (whatsapp && whatsapp.status === "CONNECTED") {
@@ -152,9 +158,33 @@ const UpdateTicketService = async ({
             media: null,
             userId
           });
-        } catch (error) {
-          // Se falhar ao enviar, apenas loga o erro mas não impede o atendimento
-          logger.error(`Erro ao enviar mensagem ao iniciar atendimento: ${error}`);
+        } catch (error: any) {
+          // Se a sessão do WhatsApp não estiver inicializada, tentar reinicializar
+          const errorMessage = error?.message || String(error);
+          if (errorMessage.includes("ERR_WAPP_NOT_INITIALIZED") || errorMessage.includes("ERR_SENDING_WAPP_MSG")) {
+            logger.warn(`WhatsApp session not initialized for ticket ${ticketId}. Checking session status before restart.`);
+            try {
+              const whatsapp = await Whatsapp.findOne({
+                where: { id: ticket.whatsappId, tenantId: ticket.tenantId }
+              });
+              if (whatsapp) {
+                // Se o status é CONNECTED mas a sessão não está em memória, forçar reinício
+                // Não tentar reiniciar apenas se já estiver em processo de conexão (OPENING, qrcode)
+                if (whatsapp.status === "OPENING" || whatsapp.status === "qrcode") {
+                  logger.info(`WhatsApp session ${whatsapp.id} is already ${whatsapp.status}. Skipping restart.`);
+                } else {
+                  logger.info(`WhatsApp session ${whatsapp.id} is ${whatsapp.status} but not in memory. Attempting to restart.`);
+                  await StartWhatsAppSession(whatsapp);
+                  logger.info(`WhatsApp session restart initiated for ticket ${ticketId}`);
+                }
+              }
+            } catch (restartError) {
+              logger.error(`Failed to restart WhatsApp session for ticket ${ticketId}: ${restartError}`);
+            }
+          } else {
+            logger.error(`Error sending welcome message for ticket ${ticketId}: ${error}`);
+          }
+          // Não bloquear o início do atendimento se o envio da mensagem falhar
         }
       }
     }

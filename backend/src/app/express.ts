@@ -174,7 +174,10 @@ export default async function express(app: Application): Promise<void> {
   app.use(
     cors({
       origin,
-      credentials: true
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+      exposedHeaders: ["Content-Range", "X-Content-Range"]
     })
   );
 

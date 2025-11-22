@@ -37,16 +37,30 @@ const SetTicketMessagesAsRead = async (ticket: Ticket): Promise<void> => {
     // throw new Error("ERR_WAPP_NOT_INITIALIZED");
   }
 
-  const ticketReload = await ShowTicketService({
-    id: ticket.id,
-    tenantId: ticket.tenantId
-  });
+  try {
+    const ticketReload = await ShowTicketService({
+      id: ticket.id,
+      tenantId: ticket.tenantId
+    });
 
-  socketEmit({
-    tenantId: ticket.tenantId,
-    type: "ticket:update",
-    payload: ticketReload
-  });
+    if (ticketReload && ticketReload.tenantId) {
+      socketEmit({
+        tenantId: ticketReload.tenantId,
+        type: "ticket:update",
+        payload: ticketReload
+      });
+    }
+  } catch (err) {
+    logger.warn(`Error reloading ticket ${ticket.id} for socket emit: ${err}`);
+    // Emitir com o ticket original se o reload falhar
+    if (ticket && ticket.tenantId) {
+      socketEmit({
+        tenantId: ticket.tenantId,
+        type: "ticket:update",
+        payload: ticket
+      });
+    }
+  }
 };
 
 export default SetTicketMessagesAsRead;

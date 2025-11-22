@@ -67,19 +67,33 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     console.log("SetTicketMessagesAsRead", error);
   }
 
-  await CreateMessageSystemService({
-    msg: messageData,
-    tenantId,
-    medias,
-    ticket,
-    userId,
-    scheduleDate: messageData.scheduleDate,
-    sendType: messageData.sendType || "chat",
-    status: "pending",
-    idFront: messageData.idFront
-  });
+  try {
+    await CreateMessageSystemService({
+      msg: messageData,
+      tenantId,
+      medias,
+      ticket,
+      userId,
+      scheduleDate: messageData.scheduleDate,
+      sendType: messageData.sendType || "chat",
+      status: "pending",
+      idFront: messageData.idFront
+    });
 
-  return res.send();
+    return res.send();
+  } catch (error: any) {
+    logger.error(`Erro ao criar mensagem para ticket ${ticketId}: ${error?.message || error}`);
+    
+    // Se for erro de WhatsApp não inicializado, retornar mensagem amigável
+    if (error instanceof AppError && error.message === "ERR_SENDING_WAPP_MSG") {
+      return res.status(400).json({ 
+        error: "Mensagem não enviada pelo Whatsapp.. Verifique se a conexão com o whatsapp está ativa. Se necessário, atualize a página e tente novamente em alguns instantes."
+      });
+    }
+    
+    // Re-lançar o erro para ser tratado pelo middleware de erro global
+    throw error;
+  }
 };
 
 export const remove = async (

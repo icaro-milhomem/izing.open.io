@@ -4,7 +4,7 @@
   "description": "izing.open.io - sistema de atendimentos multicanal",
   "main": "index.js",
   "scripts": {
-    "preinstall": "sudo npm install -g npm@11.3.0",
+    "preinstall": "echo 'Skipping npm global install - current version is already newer'",
     "build": "tsc",
     "watch": "tsc -w",
     "start": "nodemon --inspect  dist/server.js",

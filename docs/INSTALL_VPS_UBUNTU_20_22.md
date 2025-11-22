@@ -100,10 +100,16 @@ docker run -d --name portainer -p 9000:9000 -p 9443:9443 --restart=always -v /va
 wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmour -o /usr/share/keyrings/chrome-keyring.gpg 
 ```
 
+13.5. remover arquivo duplicado do repositorio google chrome (se existir)
+
+```bash
+sudo rm -f /etc/apt/sources.list.d/google-chrome.list
+```
+
 14. adicionar repositorio
 
 ```bash
-sudo sh -c 'echo "deb [arch=amd64,arm64,ppc64el signed-by=/usr/share/keyrings/chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google.list'
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/usr/share/keyrings/chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google.list'
 ```
 
 15. update apt
@@ -147,16 +153,23 @@ usermod -aG docker deploy
 su deploy
 ```
 
-22. Realizar o download do node 18.x
+22. Realizar o download do node 22.x
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 ```
 
 23. Instalar o node
 
 ```bash
 sudo apt-get install -y nodejs
+```
+
+23.5. Verificar versões do node e npm instaladas
+
+```bash
+node --version
+npm --version
 ```
 
 24. Acessar o diretório raiz
@@ -501,7 +514,7 @@ sudo service nginx restart
 62. Instalar o suporte a pacotes Snap
 
 ```bash
-sudo apt-get install snapd
+  sudo apt-get install snapd
 ```
 
 63. Instalar o pacote do notes

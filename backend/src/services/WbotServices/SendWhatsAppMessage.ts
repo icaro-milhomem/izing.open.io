@@ -51,6 +51,19 @@ const SendWhatsAppMessage = async ({
 
   const wbot = await GetTicketWbot(ticket);
 
+  // Verificar se a sessão está realmente conectada antes de tentar enviar
+  try {
+    const sessionState = await wbot.getState();
+    if (sessionState !== "CONNECTED") {
+      logger.warn(`Sessão WhatsApp ${ticket.whatsappId} não está conectada. Estado atual: ${sessionState}`);
+      throw new AppError("ERR_WAPP_NOT_INITIALIZED");
+    }
+  } catch (stateError: any) {
+    logger.error(`Erro ao verificar estado da sessão WhatsApp ${ticket.whatsappId}: ${stateError}`);
+    // Se não conseguir verificar o estado, assumir que não está conectada
+    throw new AppError("ERR_WAPP_NOT_INITIALIZED");
+  }
+
   try {
     // WWebJS não suporta menus interativos nativos
     // Converter para formato de texto quando menuOptions estiver presente
@@ -120,9 +133,29 @@ const SendWhatsAppMessage = async ({
       logger.error(`Error criar log mensagem ${error}`);
     }
     return sendMessage;
-  } catch (err) {
+  } catch (err: any) {
     logger.error(`SendWhatsAppMessage | Error: ${err}`);
-    // await StartWhatsAppSessionVerify(ticket.whatsappId, err);
+    
+    // Verificar se o erro indica que a sessão está corrompida ou desconectada
+    const errorMessage = err?.message || String(err);
+    const errorString = errorMessage.toLowerCase();
+    
+    // Se o erro indicar que a sessão não está inicializada ou está corrompida, tentar reiniciar
+    if (
+      errorString.includes("cannot read properties of undefined") ||
+      errorString.includes("getchat") ||
+      errorString.includes("session closed") ||
+      errorString.includes("err_wapp_not_initialized")
+    ) {
+      logger.warn(`Sessão WhatsApp ${ticket.whatsappId} parece estar corrompida. Tentando reiniciar...`);
+      try {
+        const { StartWhatsAppSessionVerify } = await import("./StartWhatsAppSessionVerify");
+        await StartWhatsAppSessionVerify(ticket.whatsappId, errorMessage);
+      } catch (restartError) {
+        logger.error(`Erro ao tentar reiniciar sessão ${ticket.whatsappId}: ${restartError}`);
+      }
+    }
+    
     throw new AppError("ERR_SENDING_WAPP_MSG");
   }
 };
