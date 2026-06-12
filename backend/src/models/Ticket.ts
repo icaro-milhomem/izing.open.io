@@ -15,7 +15,7 @@ import {
   AllowNull
 } from "sequelize-typescript";
 
-import { format } from "date-fns";
+import buildTicketProtocol from "../helpers/ticketProtocol";
 import Contact from "./Contact";
 import Message from "./Message";
 import User from "./User";
@@ -173,10 +173,10 @@ class Ticket extends Model<Ticket> {
 
   @Column(DataType.VIRTUAL)
   get protocol(): string {
-    const date = this.getDataValue("createdAt");
-    const formatDate = format(new Date(date), "yyyyddMMHHmmss");
-    const id = this.getDataValue("id");
-    return `${formatDate}${id}`;
+    return buildTicketProtocol(
+      this.getDataValue("createdAt"),
+      this.getDataValue("id")
+    );
   }
 }
 

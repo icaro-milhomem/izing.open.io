@@ -28,6 +28,7 @@ const CreateContactService = async ({
   name,
   number,
   email = "",
+  profilePicUrl = "",
   extraInfo = [],
   tenantId,
   wallets
@@ -45,6 +46,7 @@ const CreateContactService = async ({
       name,
       number,
       email,
+      profilePicUrl,
       extraInfo,
       tenantId
     },

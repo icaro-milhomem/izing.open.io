@@ -1,4 +1,4 @@
-import { initWbot } from "../../libs/wbot";
+import { getWbot, initWbot, isWbotInitializing } from "../../libs/wbot";
 import { initWuzapiSession } from "../../libs/wuzapiSession";
 import Whatsapp from "../../models/Whatsapp";
 import { wbotMessageListener } from "./wbotMessageListener";
@@ -14,6 +14,22 @@ import { StartMessengerBot } from "../MessengerChannelServices/StartMessengerBot
 export const StartWhatsAppSession = async (
   whatsapp: Whatsapp
 ): Promise<void> => {
+  try {
+    const wbot = getWbot(whatsapp.id);
+    const state = String(await wbot.getState()).toUpperCase();
+    if (state === "CONNECTED") {
+      logger.info(`StartWhatsAppSession: ${whatsapp.id} already CONNECTED, skipping`);
+      return;
+    }
+  } catch {
+    /* session not in memory */
+  }
+
+  if (isWbotInitializing(whatsapp.id)) {
+    logger.info(`StartWhatsAppSession: ${whatsapp.id} already initializing, skipping duplicate`);
+    return;
+  }
+
   await whatsapp.update({ status: "OPENING" });
 
   const io = getIO();

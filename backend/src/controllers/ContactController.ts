@@ -17,6 +17,7 @@ import GetProfilePicUrl from "../services/WbotServices/GetProfilePicUrl";
 import AppError from "../errors/AppError";
 import UpdateContactWalletsService from "../services/ContactServices/UpdateContactWalletsService";
 import SyncContactsWhatsappInstanceService from "../services/WbotServices/SyncContactsWhatsappInstanceService";
+import SendContactVCardToSelf from "../services/WbotServices/SendContactVCardToSelf";
 import Whatsapp from "../models/Whatsapp";
 import { ImportFileContactsService } from "../services/WbotServices/ImportFileContactsService";
 import Contact from "../models/Contact";
@@ -81,6 +82,10 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     profilePicUrl,
     tenantId
   });
+
+  if (contact.number) {
+    SendContactVCardToSelf(tenantId, contact.number).catch(() => undefined);
+  }
 
   return res.status(200).json(contact);
 };

@@ -8,7 +8,8 @@ import Whatsapp from "../../models/Whatsapp";
 import socketEmit from "../../helpers/socketEmit";
 import CreateLogTicketService from "./CreateLogTicketService";
 import Message from "../../models/Message";
-import SendMessageSystemProxy from "../../helpers/SendMessageSystemProxy";
+import CreateMessageSystemService from "../MessageServices/CreateMessageSystemService";
+import sendTicketProtocolMessage from "../../helpers/SendTicketProtocolMessage";
 import { StartWhatsAppSession } from "../WbotServices/StartWhatsAppSession";
 import { logger } from "../../utils/logger";
 
@@ -135,6 +136,11 @@ const UpdateTicketService = async ({
       const whatsapp = await Whatsapp.findByPk(ticket.whatsappId);
       if (whatsapp && whatsapp.status === "CONNECTED") {
         try {
+          await sendTicketProtocolMessage(
+            ticket,
+            userId || userIdRequest
+          );
+
           const mensagens = [
             `Olá! Sou ${user.name}, da equipe EcoNect Fibra. Vou te ajudar a resolver sua solicitação agora mesmo.`,
             `Olá! Aqui é ${user.name} da EcoNect Fibra. Vamos iniciar seu atendimento!`,
@@ -143,20 +149,13 @@ const UpdateTicketService = async ({
           ];
           const mensagemAleatoria = mensagens[Math.floor(Math.random() * mensagens.length)];
 
-          await SendMessageSystemProxy({
+          await CreateMessageSystemService({
+            msg: { body: mensagemAleatoria, fromMe: true, read: true },
+            tenantId: ticket.tenantId,
             ticket,
-            messageData: {
-              body: mensagemAleatoria,
-              ticketId,
-              contactId: ticket.contactId,
-              fromMe: true,
-              read: true,
-              mediaType: "chat",
-              userId,
-              tenantId: ticket.tenantId
-            },
-            media: null,
-            userId
+            userId: userId || userIdRequest,
+            sendType: "bot",
+            status: "pending"
           });
         } catch (error: any) {
           // Se a sessão do WhatsApp não estiver inicializada, tentar reinicializar

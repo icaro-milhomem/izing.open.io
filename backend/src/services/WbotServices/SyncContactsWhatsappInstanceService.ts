@@ -3,6 +3,15 @@ import { getWbot } from "../../libs/wbot";
 import Contact from "../../models/Contact";
 import AppError from "../../errors/AppError";
 import { logger } from "../../utils/logger";
+import ResolveContactProfilePicUrl from "./ResolveContactProfilePicUrl";
+import SendContactVCardToSelf from "./SendContactVCardToSelf";
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise(resolve => setTimeout(resolve, ms));
+
+const MAX_PROFILE_PIC_SYNC = Number(
+  process.env.CONTACT_PIC_SYNC_LIMIT || 40
+);
 
 const SyncContactsWhatsappInstanceService = async (
   whatsappId: number,
@@ -25,41 +34,80 @@ const SyncContactsWhatsappInstanceService = async (
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    const dataArray: object[] = [];
-    await Promise.all(
-      contacts.map(async ({ name, pushname, number, isGroup, id }) => {
-        if ((name || pushname) && !isGroup && id.server !== "lid") {
-          // const profilePicUrl = await wbot.getProfilePicUrl(`${number}@c.us`);
-          const contactObj = { name: name || pushname, number, tenantId };
-          dataArray.push(contactObj);
-        }
-      })
-    );
+    const dataArray: Array<{
+      name: string;
+      number: string;
+      tenantId: number;
+      profilePicUrl?: string;
+      isNew: boolean;
+    }> = [];
+
+    let picFetchCount = 0;
+
+    for (const { name, pushname, number, isGroup, id } of contacts) {
+      if (!(name || pushname) || isGroup || id.server === "lid") {
+        continue;
+      }
+
+      const existing = await Contact.findOne({
+        where: { number, tenantId }
+      });
+
+      let profilePicUrl = existing?.profilePicUrl;
+      const needsPhoto =
+        !profilePicUrl ||
+        profilePicUrl.includes("pps.whatsapp.net") ||
+        profilePicUrl.includes("whatsapp.net");
+
+      if (needsPhoto && picFetchCount < MAX_PROFILE_PIC_SYNC) {
+        profilePicUrl = await ResolveContactProfilePicUrl(
+          tenantId,
+          number,
+          id._serialized,
+          whatsappId
+        );
+        picFetchCount += 1;
+        await sleep(250);
+      }
+
+      dataArray.push({
+        name: name || pushname,
+        number,
+        tenantId,
+        profilePicUrl,
+        isNew: !existing
+      });
+    }
+
     if (dataArray.length) {
       const d = new Date().toJSON();
-      const query = `INSERT INTO "Contacts" (number, name, "tenantId", "createdAt", "updatedAt") VALUES
-        ${dataArray
-          .map((e: any) => {
-		    const cleanedName = e.name.replace(/[^a-zA-Z0-9 ]+/g, '');
-            return `('${e.number}',
-			'${cleanedName}',
-            '${e.tenantId}',
-            '${d}'::timestamp,
-            '${d}'::timestamp)`;
-          })
-          .join(",")}
-        ON CONFLICT (number, "tenantId") DO NOTHING`;
 
-      await Contact.sequelize?.query(query, {
-        type: QueryTypes.INSERT
-      });
-      // await Contact.bulkCreate(dataArray, {
-      //   fields: ["number", "name", "tenantId"],
-      //   updateOnDuplicate: ["number", "name"],
-      //   logging: console.log
-      // });
-      // console.log("sql contact");
+      for (const entry of dataArray) {
+        const cleanedName = String(entry.name || "").replace(
+          /[^a-zA-Z0-9 ]+/g,
+          ""
+        );
+        const picValue = entry.profilePicUrl
+          ? `'${String(entry.profilePicUrl).replace(/'/g, "''")}'`
+          : "NULL";
+
+        const query = `INSERT INTO "Contacts" (number, name, "profilePicUrl", "tenantId", "createdAt", "updatedAt")
+          VALUES ('${entry.number}', '${cleanedName}', ${picValue}, '${entry.tenantId}', '${d}'::timestamp, '${d}'::timestamp)
+          ON CONFLICT (number, "tenantId") DO UPDATE SET
+            name = EXCLUDED.name,
+            "profilePicUrl" = COALESCE(EXCLUDED."profilePicUrl", "Contacts"."profilePicUrl"),
+            "updatedAt" = '${d}'::timestamp`;
+
+        await Contact.sequelize?.query(query, {
+          type: QueryTypes.INSERT
+        });
+
+        if (entry.isNew) {
+          SendContactVCardToSelf(tenantId, entry.number, whatsappId).catch(
+            () => undefined
+          );
+        }
+      }
     }
   } catch (error) {
     console.error(error);

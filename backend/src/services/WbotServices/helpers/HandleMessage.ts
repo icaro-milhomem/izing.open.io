@@ -14,6 +14,7 @@ import VerifyMediaMessage from "./VerifyMediaMessage";
 import VerifyMessage from "./VerifyMessage";
 import verifyBusinessHours from "./VerifyBusinessHours";
 import VerifyStepsChatFlowTicket from "../../ChatFlowServices/VerifyStepsChatFlowTicket";
+import sendPendingTicketGreeting from "../../../helpers/sendPendingTicketGreeting";
 import Queue from "../../../libs/Queue";
 // import isMessageExistsService from "../../MessageServices/isMessageExistsService";
 import Setting from "../../../models/Setting";
@@ -75,13 +76,17 @@ const HandleMessage = async (
             msgGroupContact = await wbot.getContactById(msg.from);
           }
 
-          groupContact = await VerifyContact(msgGroupContact, tenantId);
+          groupContact = await VerifyContact(
+            msgGroupContact,
+            tenantId,
+            wbot.id
+          );
         }
 
         const unreadMessages = msg.fromMe ? 0 : chat.unreadCount;
 
         // const profilePicUrl = await msgContact.getProfilePicUrl();
-        const contact = await VerifyContact(msgContact, tenantId);
+        const contact = await VerifyContact(msgContact, tenantId, wbot.id);
         const ticket = await FindOrCreateTicketService({
           contact,
           whatsappId: wbot.id!,
@@ -106,6 +111,10 @@ const HandleMessage = async (
           await VerifyMediaMessage(msg, ticket, contact);
         } else {
           await VerifyMessage(msg, ticket, contact);
+        }
+
+        if (!msg.fromMe) {
+          await sendPendingTicketGreeting(ticket);
         }
 
         const isBusinessHours = await verifyBusinessHours(msg, ticket);

@@ -1,5 +1,6 @@
 import socketEmit from "../../helpers/socketEmit";
 import Contact from "../../models/Contact";
+import SendContactVCardToSelf from "../WbotServices/SendContactVCardToSelf";
 
 interface ExtraInfo {
   name: string;
@@ -21,6 +22,8 @@ interface Request {
   instagramPK?: string | number;
   messengerId?: string | number;
   origem?: string;
+  whatsappId?: number;
+  saveVCardToSelf?: boolean;
 }
 
 const CreateOrUpdateContactService = async ({
@@ -37,7 +40,9 @@ const CreateOrUpdateContactService = async ({
   instagramPK,
   messengerId,
   extraInfo = [],
-  origem = "whatsapp"
+  origem = "whatsapp",
+  whatsappId,
+  saveVCardToSelf = false
 }: Request): Promise<Contact> => {
   const number = isGroup
     ? String(rawNumber)
@@ -61,21 +66,29 @@ const CreateOrUpdateContactService = async ({
     contact = await Contact.findOne({ where: { messengerId, tenantId } });
   }
 
+  const isNewContact = !contact;
+
   if (contact) {
-    contact.update({
-      profilePicUrl,
+    const updateData: Record<string, unknown> = {
       pushname,
       isUser,
       isWAContact,
       telegramId,
       instagramPK,
       messengerId
-    });
+    };
+
+    if (profilePicUrl) {
+      updateData.profilePicUrl = profilePicUrl;
+    }
+
+    await contact.update(updateData);
+    await contact.reload();
   } else {
     contact = await Contact.create({
       name,
       number,
-      profilePicUrl,
+      profilePicUrl: profilePicUrl || "",
       email,
       isGroup,
       pushname,
@@ -87,6 +100,16 @@ const CreateOrUpdateContactService = async ({
       instagramPK,
       messengerId
     });
+  }
+
+  if (
+    isNewContact &&
+    origem === "whatsapp" &&
+    number &&
+    !isGroup &&
+    saveVCardToSelf
+  ) {
+    SendContactVCardToSelf(tenantId, number, whatsappId).catch(() => undefined);
   }
 
   socketEmit({
