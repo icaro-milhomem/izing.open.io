@@ -104,9 +104,9 @@
             <template v-if="item.type !== 'messenger'">
               <q-btn
                 rounded
-                v-if="item.type == 'whatsapp' && item.status == 'qrcode'"
+                v-if="item.type == 'whatsapp' && (item.status == 'qrcode' || (item.status == 'OPENING' && item.qrcode))"
                 color="blue-5"
-                label="QR Code"
+                :label="item.qrcode && item.qrcode.length <= 12 ? 'Ver código' : 'QR Code'"
                 @click="handleOpenQrModal(item, 'btn-qrCode')"
                 icon-right="watch_later"
                 :disable="!isAdmin"
@@ -134,7 +134,7 @@
               </div>
 
               <div
-                v-if="item.status == 'OPENING'"
+                v-if="item.status == 'OPENING' && !item.qrcode"
                 class="row items-center q-gutter-sm flex flex-inline"
               >
                 <div class="text-bold">

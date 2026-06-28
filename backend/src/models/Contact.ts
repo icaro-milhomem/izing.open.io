@@ -65,6 +65,16 @@ class Contact extends Model<Contact> {
   @AllowNull(true)
   @Default(null)
   @Column
+  lid: string;
+
+  @AllowNull(true)
+  @Default(null)
+  @Column
+  remoteJid: string;
+
+  @AllowNull(true)
+  @Default(null)
+  @Column
   instagramPK: number;
 
   @Default(false)

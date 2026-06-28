@@ -2,18 +2,14 @@ import { Message as WbotMessage } from "whatsapp-web.js";
 import Message from "../../models/Message";
 
 const isMessageExistsService = async (msg: WbotMessage): Promise<boolean> => {
+  const messageId = msg?.id?.id;
+  if (!messageId) return false;
+
   const message = await Message.findOne({
-    where: { messageId: msg?.id?.id }
+    where: { messageId }
   });
 
-  if (!message) {
-    console.log("Mensagem não existe", msg.id.id);
-
-    return false;
-  }
-  console.log("Mensagem existente", msg.id.id);
-
-  return true;
+  return Boolean(message);
 };
 
 export default isMessageExistsService;

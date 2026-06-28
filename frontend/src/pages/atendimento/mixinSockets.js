@@ -1,12 +1,29 @@
 const usuario = JSON.parse(localStorage.getItem('usuario'))
 import Router from 'src/router/index'
-import checkTicketFilter from 'src/utils/checkTicketFilter'
 import { socketIO } from 'src/utils/socket'
 import { ConsultarTickets } from 'src/service/tickets'
 
 const socket = socketIO()
 
 const userId = +localStorage.getItem('userId')
+
+const buildNotificationParams = (status, withUnreadMessages) => {
+  const UserQueues = JSON.parse(localStorage.getItem('queues') || '[]')
+  const params = {
+    searchParam: '',
+    pageNumber: 1,
+    status,
+    showAll: false,
+    count: null,
+    withUnreadMessages,
+    isNotAssignedUser: false,
+    includeNotQueueDefined: true
+  }
+  if (UserQueues.length) {
+    params.queuesIds = UserQueues.map(q => q.id)
+  }
+  return params
+}
 
 // localStorage.debug = '*'
 
@@ -70,46 +87,16 @@ export default {
       socket.on('connect', () => {
         socket.on(`${usuario.tenantId}:ticketList`, async data => {
           if (data.type === 'chat:create') {
-            if (
-              !data.payload.read &&
-              (data.payload.ticket.userId === userId || !data.payload.ticket.userId) &&
-              data.payload.ticket.id !== this.$store.getters.ticketFocado.id
-            ) {
-              if (checkTicketFilter(data.payload.ticket)) {
-                this.handlerNotifications(data.payload)
-              }
-            }
             this.$store.commit('UPDATE_MESSAGES', data.payload)
             this.scrollToBottom()
-            // Atualiza notificações de mensagem
-            const params = {
-              searchParam: '',
-              pageNumber: 1,
-              status: ['open'],
-              showAll: false,
-              count: null,
-              queuesIds: [],
-              withUnreadMessages: true,
-              isNotAssignedUser: false,
-              includeNotQueueDefined: true
-              // date: new Date(),
-            }
-            // console.log('Definiu parametros')
             try {
-              // console.log('try')
-              const { data } = await ConsultarTickets(params)
-              // console.log('try 1')
-              this.countTickets = data.count // count total de tickets no status
-              // console.log('try 2')
-              // this.ticketsList = data.tickets
+              const { data } = await ConsultarTickets(
+                buildNotificationParams(['open'], true)
+              )
+              this.countTickets = data.count
               this.$store.commit('UPDATE_NOTIFICATIONS', data)
-              // console.log('try 3')
-              // this.$store.commit('SET_HAS_MORE', data.hasMore)
-              // console.log(this.notifications)
             } catch (err) {
-              // console.log('error try')
-              this.$notificarErro('Algum problema', err)
-              console.error(err)
+              console.error('UPDATE_NOTIFICATIONS', err)
             }
           }
 
@@ -125,47 +112,6 @@ export default {
             this.$store.commit('UPDATE_TICKET', data.payload)
           }
         })
-        socket.on(`${usuario.tenantId}:ticketList`, async data => {
-          var verify = []
-          if (data.type === 'notification:new') {
-            // console.log(data)
-            // Atualiza notificações de mensagem
-            // var data_noti = []
-            const params = {
-              searchParam: '',
-              pageNumber: 1,
-              status: ['pending'],
-              showAll: false,
-              count: null,
-              queuesIds: [],
-              withUnreadMessages: false,
-              isNotAssignedUser: false,
-              includeNotQueueDefined: true
-              // date: new Date(),
-            }
-            try {
-              const data_noti = await ConsultarTickets(params)
-              this.$store.commit('UPDATE_NOTIFICATIONS_P', data_noti.data)
-              verify = data_noti
-            } catch (err) {
-              this.$notificarErro('Algum problema', err)
-              console.error(err)
-            }
-            // Faz verificação para se certificar que notificação pertence a fila do usuário
-            var pass_noti = false
-            verify.data.tickets.forEach((element) => { pass_noti = (element.id == data.payload.id ? true : pass_noti) })
-            // Exibe Notificação
-            if (pass_noti) {
-              // Criar notificação (armazenar para evitar erro de lint no-new)
-              // eslint-disable-next-line no-unused-vars
-              const message = new self.Notification('Novo cliente pendente', {
-                body: 'Cliente: ' + data.payload.contact.name,
-                tag: 'simple-push-demo-notification'
-              })
-            }
-          }
-        })
-
         socket.on(`${usuario.tenantId}:contactList`, data => {
           this.$store.commit('UPDATE_CONTACT', data.payload)
         })

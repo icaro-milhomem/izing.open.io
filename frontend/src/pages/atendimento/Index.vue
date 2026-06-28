@@ -860,12 +860,6 @@
       </q-dialog>
 
     </q-layout>
-    <audio ref="audioNotificationPlay">
-      <source
-        :src="alertSound"
-        type="audio/mp3"
-      >
-    </audio>
   </div>
 </template>
 
@@ -876,7 +870,6 @@ import ItemTicket from './ItemTicket'
 import { ConsultarLogsTicket, ConsultarTickets, DeletarMensagem } from 'src/service/tickets'
 import { mapGetters } from 'vuex'
 import mixinSockets from './mixinSockets'
-import socketInitial from 'src/layouts/socketInitial'
 import ModalNovoTicket from './ModalNovoTicket'
 import { ListarFilas } from 'src/service/filas'
 const UserQueues = JSON.parse(localStorage.getItem('queues'))
@@ -884,10 +877,8 @@ const profile = localStorage.getItem('profile')
 const username = localStorage.getItem('username')
 const usuario = JSON.parse(localStorage.getItem('usuario'))
 import StatusWhatsapp from 'src/components/StatusWhatsapp'
-import alertSound from 'src/assets/sound.mp3'
 import { ListarWhatsapps } from 'src/service/sessoesWhatsapp'
 import { debounce } from 'quasar'
-import { format } from 'date-fns'
 import ModalUsuario from 'src/pages/usuarios/ModalUsuario'
 import { ListarConfiguracoes } from 'src/service/configuracoes'
 import { ListarMensagensRapidas } from 'src/service/mensagensRapidas'
@@ -899,7 +890,7 @@ import MensagemChat from './MensagemChat.vue'
 import { messagesLog } from '../../utils/constants'
 export default {
   name: 'IndexAtendimento',
-  mixins: [mixinSockets, socketInitial],
+  mixins: [mixinSockets],
   components: {
     ItemTicket,
     ModalNovoTicket,
@@ -914,7 +905,6 @@ export default {
       messagesLog,
       configuracoes: [],
       debounce,
-      alertSound,
       usuario,
       usuarios: [],
       selectedTab: 'open',
@@ -1109,36 +1099,6 @@ export default {
       console.log('Logo NÃO encontrada para', whatsappId)
       return null
     },
-    handlerNotifications (data) {
-      const options = {
-        body: `${data.body} - ${format(new Date(), 'HH:mm')}`,
-        icon: data.ticket.contact.profilePicUrl,
-        tag: data.ticket.id,
-        renotify: true
-      }
-
-      const notification = new Notification(
-        `Mensagem de ${data.ticket.contact.name}`,
-        options
-      )
-
-      setTimeout(() => {
-        notification.close()
-      }, 10000)
-
-      notification.onclick = e => {
-        e.preventDefault()
-        window.focus()
-        this.$store.dispatch('AbrirChatMensagens', data.ticket)
-        this.$router.push({ name: 'atendimento' })
-        // history.push(`/tickets/${ticket.id}`);
-      }
-
-      this.$nextTick(() => {
-        // utilizar refs do layout
-        this.$refs.audioNotificationPlay.play()
-      })
-    },
     async listarConfiguracoes () {
       const { data } = await ListarConfiguracoes()
       localStorage.setItem('configuracoes', JSON.stringify(data))
@@ -1321,7 +1281,6 @@ export default {
     this.$root.$on('update-ticket:info-contato', this.setValueMenuContact)
     this.socketTicketList()
     this.pesquisaTickets = JSON.parse(localStorage.getItem('filtrosAtendimento'))
-    this.$root.$on('handlerNotifications', this.handlerNotifications)
     await this.listarWhatsapps()
     await this.consultarTickets()
     await this.listarUsuarios()
@@ -1354,7 +1313,6 @@ export default {
     }
   },
   destroyed () {
-    this.$root.$off('handlerNotifications', this.handlerNotifications)
     this.$root.$off('infor-cabecalo-chat:acao-menu', this.setValueMenu)
     this.$root.$on('update-ticket:info-contato', this.setValueMenuContact)
     // this.socketDisconnect()

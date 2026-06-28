@@ -15,6 +15,7 @@ import { logger } from "../../utils/logger";
 import { sleepRandomTime } from "../../utils/sleepRandomTime";
 import Contact from "../../models/Contact";
 import GetWbotMessage from "../../helpers/GetWbotMessage";
+import sendWbotChatMessage from "../../helpers/sendWbotChatMessage";
 // import SetTicketMessagesAsRead from "../../helpers/SetTicketMessagesAsRead";
 
 interface Session extends Client {
@@ -84,9 +85,6 @@ const SendMessagesSystemWbot = async (
   for (const message of messages) {
     let quotedMsgSerializedId: string | undefined;
     const { ticket } = message;
-    const contactNumber = ticket.contact.number;
-    const typeGroup = ticket?.isGroup ? "g" : "c";
-    const chatId = `${contactNumber}@${typeGroup}.us`;
 
     if (message.quotedMsg) {
       const inCache: WbotMessage | undefined = await GetWbotMessage(
@@ -107,17 +105,31 @@ const SendMessagesSystemWbot = async (
         const customPath = join(__dirname, "..", "..", "..", "public");
         const mediaPath = join(customPath, message.mediaName);
         const newMedia = MessageMedia.fromFilePath(mediaPath);
-        sendedMessage = await wbot.sendMessage(chatId, newMedia, {
-          quotedMessageId: quotedMsgSerializedId,
-          linkPreview: false, // fix: send a message takes 2 seconds when there's a link on message body
-          sendAudioAsVoice: true
-        });
+        const result = await sendWbotChatMessage(
+          wbot,
+          ticket,
+          ticket.contact,
+          newMedia,
+          {
+            quotedMessageId: quotedMsgSerializedId,
+            linkPreview: false,
+            sendAudioAsVoice: true
+          }
+        );
+        sendedMessage = result.message;
         logger.info("sendMessage media");
       } else {
-        sendedMessage = await wbot.sendMessage(chatId, message.body, {
-          quotedMessageId: quotedMsgSerializedId,
-          linkPreview: false // fix: send a message takes 2 seconds when there's a link on message body
-        });
+        const result = await sendWbotChatMessage(
+          wbot,
+          ticket,
+          ticket.contact,
+          message.body,
+          {
+            quotedMessageId: quotedMsgSerializedId,
+            linkPreview: false
+          }
+        );
+        sendedMessage = result.message;
         logger.info("sendMessage text");
       }
 

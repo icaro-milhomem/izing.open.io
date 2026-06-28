@@ -3,10 +3,16 @@
 // import { orderBy } from 'lodash'
 // import { parseISO } from 'date-fns'
 
+const emptyNotifications = () => ({
+  count: 0,
+  tickets: [],
+  hasMore: false
+})
+
 const Notifications = {
   state: {
-    notifications: [],
-    notifications_p: []
+    notifications: emptyNotifications(),
+    notifications_p: emptyNotifications()
   },
   mutations: {
     // OK

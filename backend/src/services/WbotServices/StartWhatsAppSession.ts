@@ -1,9 +1,7 @@
-import { getWbot, initWbot, isWbotInitializing } from "../../libs/wbot";
+import { getWbot, initWbot, isWbotInitializing, bootstrapConnectedWbot } from "../../libs/wbot";
 import { initWuzapiSession } from "../../libs/wuzapiSession";
 import Whatsapp from "../../models/Whatsapp";
-import { wbotMessageListener } from "./wbotMessageListener";
 import { getIO } from "../../libs/socket";
-import wbotMonitor from "./wbotMonitor";
 import { logger } from "../../utils/logger";
 import AppError from "../../errors/AppError";
 import { StartInstaBotSession } from "../InstagramBotServices/StartInstaBotSession";
@@ -18,7 +16,9 @@ export const StartWhatsAppSession = async (
     const wbot = getWbot(whatsapp.id);
     const state = String(await wbot.getState()).toUpperCase();
     if (state === "CONNECTED") {
-      logger.info(`StartWhatsAppSession: ${whatsapp.id} already CONNECTED, skipping`);
+      logger.info(`StartWhatsAppSession: ${whatsapp.id} already CONNECTED`);
+      const fresh = await Whatsapp.findByPk(whatsapp.id);
+      if (fresh) await bootstrapConnectedWbot(wbot as any, fresh);
       return;
     }
   } catch {
@@ -26,47 +26,54 @@ export const StartWhatsAppSession = async (
   }
 
   if (isWbotInitializing(whatsapp.id)) {
-    logger.info(`StartWhatsAppSession: ${whatsapp.id} already initializing, skipping duplicate`);
+    logger.info(
+      `StartWhatsAppSession: ${whatsapp.id} already initializing, skipping duplicate`
+    );
     return;
   }
 
-  await whatsapp.update({ status: "OPENING" });
+  const fresh = await Whatsapp.findByPk(whatsapp.id);
+  if (!fresh) return;
+
+  if (fresh.status !== "qrcode" || !fresh.qrcode) {
+    await fresh.update({ status: "OPENING" });
+  }
 
   const io = getIO();
+  const updated = await Whatsapp.findByPk(whatsapp.id);
   io.emit(`${whatsapp.tenantId}:whatsappSession`, {
     action: "update",
-    session: whatsapp
+    session: updated || fresh
   });
 
   try {
-    if (whatsapp.type === "whatsapp") {
+    if (fresh.type === "whatsapp") {
       // Verificar se deve usar WUZAPI
       const useWuzapi = process.env.USE_WUZAPI === "true";
 
       if (useWuzapi) {
         await initWuzapiSession(whatsapp);
       } else {
-        const wbot = await initWbot(whatsapp);
-        wbotMessageListener(wbot);
-        wbotMonitor(wbot, whatsapp);
+        const wbot = await initWbot(fresh);
+        await bootstrapConnectedWbot(wbot, fresh);
       }
     }
 
-    if (whatsapp.type === "telegram") {
-      StartTbotSession(whatsapp);
+    if (fresh.type === "telegram") {
+      StartTbotSession(fresh);
     }
 
-    if (whatsapp.type === "instagram") {
-      StartInstaBotSession(whatsapp);
+    if (fresh.type === "instagram") {
+      StartInstaBotSession(fresh);
     }
 
-    if (whatsapp.type === "messenger") {
-      StartMessengerBot(whatsapp);
+    if (fresh.type === "messenger") {
+      StartMessengerBot(fresh);
     }
 
-    if (whatsapp.type === "waba") {
-      if (whatsapp.wabaBSP === "360") {
-        StartWaba360(whatsapp);
+    if (fresh.type === "waba") {
+      if (fresh.wabaBSP === "360") {
+        StartWaba360(fresh);
       }
     }
   } catch (err) {

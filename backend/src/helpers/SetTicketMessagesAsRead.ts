@@ -4,6 +4,7 @@ import Ticket from "../models/Ticket";
 import ShowTicketService from "../services/TicketServices/ShowTicketService";
 import { logger } from "../utils/logger";
 import GetTicketWbot from "./GetTicketWbot";
+import resolveWbotChatId from "./resolveWbotChatId";
 import socketEmit from "./socketEmit";
 
 const SetTicketMessagesAsRead = async (ticket: Ticket): Promise<void> => {
@@ -22,8 +23,9 @@ const SetTicketMessagesAsRead = async (ticket: Ticket): Promise<void> => {
   try {
     if (ticket.channel === "whatsapp") {
       const wbot = await GetTicketWbot(ticket);
+      const chatId = await resolveWbotChatId(wbot, ticket, ticket.contact);
       wbot
-        .sendSeen(`${ticket.contact.number}@${ticket.isGroup ? "g" : "c"}.us`)
+        .sendSeen(chatId)
         .catch(e => console.error("não foi possível marcar como lido", e));
     }
     if (ticket.channel === "messenger") {

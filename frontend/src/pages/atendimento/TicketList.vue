@@ -220,13 +220,9 @@ export default {
       })
 
       this.socket.on(`tenant:${usuario.tenantId}:appMessage`, (data) => {
-        if (data.action === 'create' && shouldUpdateTicket(data.ticket)) {
-          // console.log('ticketList > UPDATE_TICKET_UNREAD_MESSAGES', data)
-          if (this.ticketFocado.id !== data.ticket.id && this.status !== 'closed' && !data.message.fromMe && !data.ticket.chatFlowId) {
-            this.$root.$emit('handlerNotifications', data.message)
+          if (data.action === 'create' && shouldUpdateTicket(data.ticket)) {
+            this.$store.commit('UPDATE_TICKET_UNREAD_MESSAGES', { type: this.status, ticket: data.ticket })
           }
-          this.$store.commit('UPDATE_TICKET_UNREAD_MESSAGES', { type: this.status, ticket: data.ticket })
-        }
       })
 
       // socket.on(`${usuario.tenantId}:contact`, (data) => {

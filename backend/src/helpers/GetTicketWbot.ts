@@ -1,5 +1,5 @@
 import { Client as Session } from "whatsapp-web.js";
-import { getWbot } from "../libs/wbot";
+import { getWbot, bootstrapConnectedWbot } from "../libs/wbot";
 import GetDefaultWhatsApp from "./GetDefaultWhatsApp";
 import Ticket from "../models/Ticket";
 import Whatsapp from "../models/Whatsapp";
@@ -15,7 +15,11 @@ const GetTicketWbot = async (ticket: Ticket): Promise<Session> => {
   }
 
   try {
-    const wbot = getWbot(ticket.whatsappId);
+    const wbot = getWbot(ticket.whatsappId) as any;
+    const whatsapp = await Whatsapp.findByPk(ticket.whatsappId);
+    if (whatsapp?.status === "CONNECTED") {
+      await bootstrapConnectedWbot(wbot, whatsapp);
+    }
     return wbot;
   } catch (error: any) {
     // Se a sessão não estiver inicializada, tentar reiniciar se o status no banco for CONNECTED

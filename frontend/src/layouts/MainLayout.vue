@@ -48,19 +48,19 @@
               color="red"
               text-color="white"
               floating
-              v-if="(parseInt(notifications.count) + parseInt(notifications_p.count)) > 0"
+              v-if="totalNotificationsCount > 0"
             >
-              {{ parseInt(notifications.count) + parseInt(notifications_p.count) }}
+              {{ totalNotificationsCount }}
             </q-badge>
-            <q-menu>
+            <q-menu anchor="bottom right" self="top right">
               <q-list style="min-width: 300px">
 
-                <q-item v-if="(parseInt(notifications.count) + parseInt(notifications_p.count)) == 0">
+                <q-item v-if="totalNotificationsCount === 0">
                   <q-item-section style="cursor: pointer;">
                     Nada de novo por aqui!
                   </q-item-section>
                 </q-item>
-                <q-item v-if="parseInt(notifications_p.count) > 0">
+                <q-item v-if="pendingNotificationsCount > 0">
                   <q-item-section
                     avatar
                     @click="() => $router.push({ name: 'atendimento' })"
@@ -71,7 +71,7 @@
                       color="blue"
                       text-color="white"
                     >
-                      {{ notifications_p.count }}
+                      {{ pendingNotificationsCount }}
                     </q-avatar>
                   </q-item-section>
                   <q-item-section
@@ -82,7 +82,7 @@
                   </q-item-section>
                 </q-item>
                 <q-item
-                  v-for="ticket in notifications.tickets"
+                  v-for="ticket in (notifications.tickets || [])"
                   :key="ticket.id"
                   style="border-bottom: 1px solid #ddd; margin: 5px;"
                 >
@@ -169,6 +169,24 @@
       </q-toolbar>
     </q-header>
 
+    <q-banner
+      v-if="notificationsNeedPermission && (userProfile === 'admin' || userProfile === 'user')"
+      inline-actions
+      rounded
+      class="bg-orange text-white q-mx-sm q-mt-xs"
+      dense
+    >
+      Ative as notificações do sistema para receber popup com o navegador minimizado.
+      <template v-slot:action>
+        <q-btn
+          flat
+          label="Ativar"
+          color="white"
+          @click="ativarNotificacoesSistema"
+        />
+      </template>
+    </q-banner>
+
     <q-drawer
       v-model="leftDrawerOpen"
       show-if-above
@@ -237,12 +255,7 @@
         <router-view />
       </q-page>
     </q-page-container>
-    <audio ref="audioNotification" v-if="userProfile === 'admin' || userProfile === 'user'">
-      <source
-        :src="alertSound"
-        type="audio/mp3"
-      >
-    </audio>
+
     <ModalUsuario
       :isProfile="true"
       :modalUsuario.sync="modalUsuario"
@@ -256,8 +269,6 @@ import cSystemVersion from '../components/cSystemVersion.vue'
 import { ListarWhatsapps } from 'src/service/sessoesWhatsapp'
 import EssentialLink from 'components/EssentialLink.vue'
 import socketInitial from './socketInitial'
-import alertSound from 'src/assets/sound.mp3'
-import { format } from 'date-fns'
 const username = localStorage.getItem('username')
 import ModalUsuario from 'src/pages/usuarios/ModalUsuario'
 import { mapGetters } from 'vuex'
@@ -266,6 +277,7 @@ import { RealizarLogout } from 'src/service/login'
 import cStatusUsuario from '../components/cStatusUsuario.vue'
 import { socketIO } from 'src/utils/socket'
 import { ConsultarTickets } from 'src/service/tickets'
+import { openTicketFromNotification, unlockNotificationAudio, initNotificationAudio } from 'src/utils/notificationHandler'
 
 const socket = socketIO()
 
@@ -423,17 +435,26 @@ export default {
       userProfile: 'user',
       modalUsuario: false,
       usuario: {},
-      alertSound,
       leftDrawerOpen: false,
       menuData: objMenu,
       menuDataAdmin: objMenuAdmin,
       menuDataSuper: superMenu,
       countTickets: 0,
-      ticketsList: []
+      ticketsList: [],
+      notificationsNeedPermission: false
     }
   },
   computed: {
     ...mapGetters(['notifications', 'notifications_p', 'whatsapps']),
+    openNotificationsCount () {
+      return Number(this.notifications?.count) || 0
+    },
+    pendingNotificationsCount () {
+      return Number(this.notifications_p?.count) || 0
+    },
+    totalNotificationsCount () {
+      return this.openNotificationsCount + this.pendingNotificationsCount
+    },
     cProblemaConexao () {
       const idx = this.whatsapps.findIndex(w =>
         ['PAIRING', 'TIMEOUT', 'DISCONNECTED'].includes(w.status)
@@ -477,31 +498,56 @@ export default {
       const { data } = await ListarWhatsapps()
       this.$store.commit('LOAD_WHATSAPPS', data)
     },
-    handlerNotifications (data) {
-      const { message, contact, ticket } = data
-
-      const options = {
-        body: `${message.body} - ${format(new Date(), 'HH:mm')}`,
-        icon: contact.profilePicUrl,
-        tag: ticket.id,
-        renotify: true
+    onServiceWorkerMessage (event) {
+      if (event?.data?.type === 'NOTIFICATION_CLICK' && event.data.ticketId) {
+        openTicketFromNotification(this, event.data.ticketId)
+      }
+    },
+    atualizarPermissaoNotificacoes () {
+      this.notificationsNeedPermission =
+        'Notification' in window &&
+        Notification.permission !== 'granted'
+    },
+    async ativarNotificacoesSistema () {
+      if (!('Notification' in window)) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Seu navegador não suporta notificações nativas.'
+        })
+        return
       }
 
-      const notification = new Notification(
-        `Mensagem de ${contact.name}`,
-        options
-      )
+      const result = await Notification.requestPermission()
+      this.atualizarPermissaoNotificacoes()
 
-      notification.onclick = e => {
-        e.preventDefault()
-        window.focus()
-        this.$store.dispatch('AbrirChatMensagens', ticket)
-        this.$router.push({ name: 'atendimento' })
+      if (result === 'granted') {
+        this.$q.notify({
+          type: 'positive',
+          message: 'Notificações do sistema ativadas.'
+        })
+      } else {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Permissão negada. Verifique as configurações do navegador.'
+        })
       }
-      this.$nextTick(() => {
-        // utilizar refs do layout
-        this.$refs.audioNotification.play()
-      })
+    },
+    notificationQueryParams (status, withUnreadMessages) {
+      const UserQueues = JSON.parse(localStorage.getItem('queues') || '[]')
+      const params = {
+        searchParam: '',
+        pageNumber: 1,
+        status,
+        showAll: false,
+        count: null,
+        withUnreadMessages,
+        isNotAssignedUser: false,
+        includeNotQueueDefined: true
+      }
+      if (UserQueues.length) {
+        params.queuesIds = UserQueues.map(q => q.id)
+      }
+      return params
     },
     async abrirModalUsuario () {
       this.modalUsuario = true
@@ -541,43 +587,21 @@ export default {
       }
     },
     async consultarTickets () {
-      const params = {
-        searchParam: '',
-        pageNumber: 1,
-        status: ['open'],
-        showAll: false,
-        count: null,
-        queuesIds: [],
-        withUnreadMessages: true,
-        isNotAssignedUser: false,
-        includeNotQueueDefined: true
-      }
       try {
-        const { data } = await ConsultarTickets(params)
-        this.countTickets = data.count // count total de tickets no status
+        const { data } = await ConsultarTickets(
+          this.notificationQueryParams(['open'], true)
+        )
         this.$store.commit('UPDATE_NOTIFICATIONS', data)
       } catch (err) {
-        this.$notificarErro('Algum problema', err)
-        console.error(err)
-      }
-      const params2 = {
-        searchParam: '',
-        pageNumber: 1,
-        status: ['pending'],
-        showAll: false,
-        count: null,
-        queuesIds: [],
-        withUnreadMessages: false,
-        isNotAssignedUser: false,
-        includeNotQueueDefined: true
+        console.error('consultarTickets open', err)
       }
       try {
-        const { data } = await ConsultarTickets(params2)
-        this.countTickets = data.count // count total de tickets no status
+        const { data } = await ConsultarTickets(
+          this.notificationQueryParams(['pending'], false)
+        )
         this.$store.commit('UPDATE_NOTIFICATIONS_P', data)
       } catch (err) {
-        this.$notificarErro('Algum problema', err)
-        console.error(err)
+        console.error('consultarTickets pending', err)
       }
     },
     abrirChatContato (ticket) {
@@ -617,19 +641,25 @@ export default {
     }
   },
   async mounted () {
+    initNotificationAudio()
+    document.addEventListener('click', unlockNotificationAudio, { once: true, capture: true })
+    document.addEventListener('keydown', unlockNotificationAudio, { once: true, capture: true })
     this.atualizarUsuario()
     await this.listarWhatsapps()
     await this.listarConfiguracoes()
     await this.consultarTickets()
-    if (!('Notification' in window)) {
-    } else {
-      Notification.requestPermission()
-    }
+    this.atualizarPermissaoNotificacoes()
     this.usuario = JSON.parse(localStorage.getItem('usuario'))
     this.userProfile = localStorage.getItem('profile')
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', this.onServiceWorkerMessage)
+    }
     await this.conectarSocket(this.usuario)
   },
   destroyed () {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.removeEventListener('message', this.onServiceWorkerMessage)
+    }
     socket.disconnect()
   }
 }

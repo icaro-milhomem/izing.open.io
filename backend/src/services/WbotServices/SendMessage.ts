@@ -3,6 +3,7 @@ import { MessageMedia } from "whatsapp-web.js";
 import Message from "../../models/Message";
 import { logger } from "../../utils/logger";
 import { getWbot } from "../../libs/wbot";
+import sendWbotChatMessage from "../../helpers/sendWbotChatMessage";
 
 const SendMessage = async (message: Message): Promise<void> => {
   logger.info(`SendMessage: ${message.id}`);
@@ -11,11 +12,10 @@ const SendMessage = async (message: Message): Promise<void> => {
 
   let quotedMsgSerializedId: string | undefined;
   const { ticket } = message;
-  const contactNumber = message.contact.number;
-  const typeGroup = ticket?.isGroup ? "g" : "c";
-  const chatId = `${contactNumber}@${typeGroup}.us`;
 
   if (message.quotedMsg) {
+    const typeGroup = ticket?.isGroup ? "g" : "c";
+    const contactNumber = message.contact.number;
     quotedMsgSerializedId = `${message.quotedMsg.fromMe}_${contactNumber}@${typeGroup}.us_${message.quotedMsg.messageId}`;
   }
 
@@ -23,16 +23,30 @@ const SendMessage = async (message: Message): Promise<void> => {
     const customPath = join(__dirname, "..", "..", "..", "public");
     const mediaPath = join(customPath, message.mediaName);
     const newMedia = MessageMedia.fromFilePath(mediaPath);
-    sendedMessage = await wbot.sendMessage(chatId, newMedia, {
-      quotedMessageId: quotedMsgSerializedId,
-      linkPreview: false, // fix: send a message takes 2 seconds when there's a link on message body
-      sendAudioAsVoice: true
-    });
+    const result = await sendWbotChatMessage(
+      wbot,
+      ticket,
+      message.contact,
+      newMedia,
+      {
+        quotedMessageId: quotedMsgSerializedId,
+        linkPreview: false,
+        sendAudioAsVoice: true
+      }
+    );
+    sendedMessage = result.message;
   } else {
-    sendedMessage = await wbot.sendMessage(chatId, message.body, {
-      quotedMessageId: quotedMsgSerializedId,
-      linkPreview: false // fix: send a message takes 2 seconds when there's a link on message body
-    });
+    const result = await sendWbotChatMessage(
+      wbot,
+      ticket,
+      message.contact,
+      message.body,
+      {
+        quotedMessageId: quotedMsgSerializedId,
+        linkPreview: false
+      }
+    );
+    sendedMessage = result.message;
   }
 
   // enviar old_id para substituir no front a mensagem corretamente

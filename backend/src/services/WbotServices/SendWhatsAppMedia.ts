@@ -2,6 +2,8 @@ import fs from "fs";
 import { MessageMedia, Message as WbotMessage } from "whatsapp-web.js";
 import AppError from "../../errors/AppError";
 import GetTicketWbot from "../../helpers/GetTicketWbot";
+import ensureWbotClientInfo from "../../helpers/ensureWbotClientInfo";
+import sendWbotChatMessage from "../../helpers/sendWbotChatMessage";
 import Ticket from "../../models/Ticket";
 import UserMessagesLog from "../../models/UserMessagesLog";
 import { logger } from "../../utils/logger";
@@ -28,11 +30,14 @@ const SendWhatsAppMedia = async ({
   // Código original WWebJS
   try {
     const wbot = await GetTicketWbot(ticket);
+    await ensureWbotClientInfo(wbot);
 
     const newMedia = MessageMedia.fromFilePath(media.path);
 
-    const sendMessage = await wbot.sendMessage(
-      `${ticket.contact.number}@${ticket.isGroup ? "g" : "c"}.us`,
+    const { message: sendMessage } = await sendWbotChatMessage(
+      wbot,
+      ticket,
+      ticket.contact,
       newMedia,
       { sendAudioAsVoice: true }
     );

@@ -32,7 +32,7 @@ const checkTicketFilter = (ticket) => {
   }
   const filtros = JSON.parse(localStorage.getItem('filtrosAtendimento')) || filtroPadrao
   const usuario = JSON.parse(localStorage.getItem('usuario'))
-  const UserQueues = JSON.parse(localStorage.getItem('queues'))
+  const UserQueues = JSON.parse(localStorage.getItem('queues') || '[]')
   const filasCadastradas = JSON.parse(localStorage.getItem('filasCadastradas') || '[]')
   const profile = localStorage.getItem('profile')
   const isAdminShowAll = profile === 'admin' && filtros.showAll

@@ -27,8 +27,7 @@ export const StartAllWhatsAppsSessions = async (): Promise<void> => {
             type: "whatsapp"
           },
           status: {
-            [Op.notIn]: ["DISCONNECTED", "qrcode"]
-            // "DISCONNECTED"
+            [Op.notIn]: ["DISCONNECTED"]
           }
         }
       ],

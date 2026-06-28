@@ -93,11 +93,11 @@ const ListTicketsService = async ({
   // mount array ids queues
   let queuesIdsUser = queues.map(q => q.queueId);
   // check is queues filter and verify access user queue
-  if (queuesIds) {
+  if (queuesIds?.length) {
     const newArray: number[] = [];
     queuesIds.forEach(i => {
       const idx = queuesIdsUser.indexOf(+i);
-      if (idx) {
+      if (idx !== -1) {
         newArray.push(+i);
       }
     });

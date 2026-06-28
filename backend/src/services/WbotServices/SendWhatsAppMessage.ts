@@ -1,6 +1,8 @@
 import { Message as WbotMessage } from "whatsapp-web.js";
 import AppError from "../../errors/AppError";
 import GetTicketWbot from "../../helpers/GetTicketWbot";
+import ensureWbotClientInfo from "../../helpers/ensureWbotClientInfo";
+import sendWbotChatMessage from "../../helpers/sendWbotChatMessage";
 import GetWbotMessage from "../../helpers/GetWbotMessage";
 import SerializeWbotMsgId from "../../helpers/SerializeWbotMsgId";
 import Message from "../../models/Message";
@@ -53,6 +55,7 @@ const SendWhatsAppMessage = async ({
 
   // Verificar se a sessão está realmente conectada antes de tentar enviar
   try {
+    await ensureWbotClientInfo(wbot);
     const sessionState = await wbot.getState();
     if (sessionState !== "CONNECTED") {
       logger.warn(`Sessão WhatsApp ${ticket.whatsappId} não está conectada. Estado atual: ${sessionState}`);
@@ -108,12 +111,14 @@ const SendWhatsAppMessage = async ({
       }
     }
 
-    const sendMessage = await wbot.sendMessage(
-      `${ticket.contact.number}@${ticket.isGroup ? "g" : "c"}.us`,
+    const { message: sendMessage } = await sendWbotChatMessage(
+      wbot,
+      ticket,
+      ticket.contact,
       messageBody,
       {
         quotedMessageId: quotedMsgSerializedId,
-        linkPreview: false // fix: send a message takes 2 seconds when there's a link on message body
+        linkPreview: false
       }
     );
 

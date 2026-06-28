@@ -4,6 +4,8 @@ import CreateMessageSystemService from "../services/MessageServices/CreateMessag
 import { buildPendingTicketGreetingBody } from "./buildTimeGreeting";
 import { logger } from "../utils/logger";
 
+const greetedTicketIds = new Set<number>();
+
 export const shouldSendPendingTicketGreeting = (ticket: Ticket): boolean => {
   if (!ticket?.isCreated) return false;
   if (ticket.isGroup) return false;
@@ -20,6 +22,9 @@ export const sendPendingTicketGreeting = async (
   ticket: Ticket
 ): Promise<void> => {
   if (!shouldSendPendingTicketGreeting(ticket)) return;
+
+  if (greetedTicketIds.has(ticket.id)) return;
+  greetedTicketIds.add(ticket.id);
 
   if (!ticket.whatsappId) return;
 

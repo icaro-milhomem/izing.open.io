@@ -2,7 +2,7 @@
   <div>
     <q-item>
       <q-item-section avatar>
-        <q-icon v-if="item.status == 'qrcode'"
+        <q-icon v-if="item.status == 'qrcode' || (item.status == 'OPENING' && item.qrcode)"
           color="primary"
           name="mdi-crop-free"
           size="2.5em" />
@@ -18,15 +18,15 @@
           color="negative"
           size="2.5em"
           name="mdi-wifi-strength-1-alert" />
-        <q-spinner v-if="item.status == 'OPENING'"
+        <q-spinner v-if="item.status == 'OPENING' && !item.qrcode"
           color="green-7"
           size="3em"
           :thickness="2" />
       </q-item-section>
       <q-item-section>
-        <q-item-label v-if="item.status == 'qrcode'">
-          <span class="text-weight-medium"> Esperando leitura do QR Code </span>
-          <span class="row col"> Clique no botão 'QR CODE' e leia o QR Code com o seu celular para iniciar a sessão
+        <q-item-label v-if="item.status == 'qrcode' || (item.status == 'OPENING' && item.qrcode)">
+          <span class="text-weight-medium"> Aguardando pareamento </span>
+          <span class="row col"> Clique no botão para ver o QR Code ou código e conectar o celular
           </span>
         </q-item-label>
         <q-item-label v-if="item.status == 'DISCONNECTED'">
@@ -49,7 +49,7 @@
           <span class="row col"> Certifique-se de que seu celular esteja conectado à internet e o WhatsApp esteja
             aberto, ou clique no botão 'Desconectar' para obter um novo QR Code </span>
         </q-item-label>
-        <q-item-label v-if="item.status == 'OPENING'">
+        <q-item-label v-if="item.status == 'OPENING' && !item.qrcode">
           <span class="text-weight-medium"> Estabelecendo conexão. </span>
           <span class="row col"> Isso poderá demorar um pouco... </span>
         </q-item-label>

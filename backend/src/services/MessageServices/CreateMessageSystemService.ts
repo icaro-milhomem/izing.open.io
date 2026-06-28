@@ -204,14 +204,15 @@ const CreateMessageSystemService = async ({
           let message: any = {};
 
           if (!messageData.scheduleDate) {
-            /// enviar mensagem > run time
             message = await SendMessageSystemProxy({
               ticket,
               messageData,
               media,
               userId
             });
-            ///
+            if (message?.id?.id) {
+              messageData.status = "sended";
+            }
           }
 
           const msgCreated = await Message.create({
@@ -220,6 +221,7 @@ const CreateMessageSystemService = async ({
             id: messageData.id,
             userId,
             messageId: message.id?.id || message.messageId || null,
+            ack: typeof message?.ack === "number" ? message.ack : 0,
             body: media.originalname,
             mediaUrl: media.filename,
             mediaType:
@@ -270,6 +272,9 @@ const CreateMessageSystemService = async ({
           media: null,
           userId
         });
+        if (message?.id?.id) {
+          messageData.status = "sended";
+        }
         ///
       }
 
@@ -279,6 +284,7 @@ const CreateMessageSystemService = async ({
         id: messageData.id,
         userId,
         messageId: message.id?.id || message.messageId || null,
+        ack: typeof message?.ack === "number" ? message.ack : 0,
         mediaType: "chat"
       });
 

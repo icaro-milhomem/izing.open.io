@@ -5,7 +5,7 @@
     <q-card style="bg-white">
       <q-card-section>
         <div class="text-h6 text-primary">
-          Leia o QrCode para iniciar a sessão
+          {{ isPairingCode ? 'Código de pareamento' : 'Leia o QrCode para iniciar a sessão' }}
           <q-btn round
             class="q-ml-md"
             color="negative"
@@ -15,22 +15,30 @@
       </q-card-section>
       <q-card-section class="text-center"
         :style="$q.dark.isActive ? 'background: white !important' : ''">
-        <QrcodeVue v-if="cQrcode"
+        <div v-if="isPairingCode && cQrcode" class="q-pa-md">
+          <div class="text-h3 text-weight-bold text-primary q-mb-md" style="letter-spacing: 6px">
+            {{ cQrcode }}
+          </div>
+          <div class="text-body2 text-left q-mt-md">
+            No celular: WhatsApp → Aparelhos conectados → Conectar com número de telefone → digite o código acima.
+          </div>
+        </div>
+        <QrcodeVue v-else-if="cQrcode"
           :value="cQrcode"
           :size="300"
           level="H" />
         <span v-else>
-          Aguardando o Qr Code
+          Aguardando o código de pareamento...
         </span>
       </q-card-section>
       <q-card-section>
-        <div class="row">Caso tenha problema com a leitura, solicite um novo Qr Code </div>
+        <div class="row">Caso tenha problema, solicite um novo código </div>
         <div class="row col-12 justify-center">
           <q-btn color="primary"
             glossy
             ripple
             outline
-            label="Novo QR Code"
+            label="Novo código"
             @click="solicitarQrCode"
             icon="watch_later" />
         </div>
@@ -75,6 +83,10 @@ export default {
   computed: {
     cQrcode () {
       return this.channel.qrcode
+    },
+    isPairingCode () {
+      const code = this.cQrcode
+      return code && code.length <= 12 && !String(code).includes(',')
     }
   },
   methods: {

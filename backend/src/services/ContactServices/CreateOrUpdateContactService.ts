@@ -1,4 +1,9 @@
+import { Op } from "sequelize";
 import socketEmit from "../../helpers/socketEmit";
+import {
+  isLikelyLid,
+  isLikelyPhone
+} from "../../helpers/prepareWbotLidMapping";
 import Contact from "../../models/Contact";
 import SendContactVCardToSelf from "../WbotServices/SendContactVCardToSelf";
 
@@ -21,6 +26,8 @@ interface Request {
   telegramId?: string | number;
   instagramPK?: string | number;
   messengerId?: string | number;
+  lid?: string;
+  remoteJid?: string;
   origem?: string;
   whatsappId?: number;
   saveVCardToSelf?: boolean;
@@ -39,6 +46,8 @@ const CreateOrUpdateContactService = async ({
   telegramId,
   instagramPK,
   messengerId,
+  lid,
+  remoteJid,
   extraInfo = [],
   origem = "whatsapp",
   whatsappId,
@@ -48,10 +57,35 @@ const CreateOrUpdateContactService = async ({
     ? String(rawNumber)
     : String(rawNumber).replace(/[^0-9]/g, "");
 
+  const effectiveNumber =
+    !isGroup && number && isLikelyLid(number) && !isLikelyPhone(number)
+      ? ""
+      : number;
+
   let contact: Contact | null = null;
 
   if (origem === "whatsapp") {
-    contact = await Contact.findOne({ where: { number, tenantId } });
+    if (effectiveNumber) {
+      contact = await Contact.findOne({
+        where: { number: effectiveNumber, tenantId }
+      });
+    }
+
+    if (!contact && lid) {
+      const lidUser = lid.split("@")[0];
+      contact = await Contact.findOne({
+        where: {
+          tenantId,
+          [Op.or]: [
+            { lid: lidUser },
+            ...(remoteJid
+              ? [{ remoteJid }]
+              : [{ remoteJid: `${lidUser}@lid` }]),
+            { number: lidUser }
+          ]
+        }
+      });
+    }
   }
 
   if (origem === "telegram" && telegramId) {
@@ -81,13 +115,21 @@ const CreateOrUpdateContactService = async ({
     if (profilePicUrl) {
       updateData.profilePicUrl = profilePicUrl;
     }
+    if (lid) {
+      updateData.lid = lid;
+    }
+    if (remoteJid) {
+      updateData.remoteJid = remoteJid;
+    }
 
     await contact.update(updateData);
     await contact.reload();
   } else {
     contact = await Contact.create({
       name,
-      number,
+      number: effectiveNumber,
+      lid: lid || null,
+      remoteJid: remoteJid || null,
       profilePicUrl: profilePicUrl || "",
       email,
       isGroup,

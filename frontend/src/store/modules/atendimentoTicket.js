@@ -1,4 +1,5 @@
 import { ConsultarDadosTicket, LocalizarMensagens } from 'src/service/tickets'
+import { cancelMessageReminder } from 'src/utils/notificationHandler'
 import { Notify } from 'quasar'
 import $router from 'src/router'
 import { orderBy } from 'lodash'
@@ -408,6 +409,7 @@ const atendimentoTicket = {
     },
     async AbrirChatMensagens ({ commit, dispatch }, data) {
       try {
+        cancelMessageReminder(data.id)
         await commit('TICKET_FOCADO', {})
         await commit('RESET_MESSAGE')
         const ticket = await ConsultarDadosTicket(data)

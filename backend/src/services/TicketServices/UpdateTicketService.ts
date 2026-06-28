@@ -160,7 +160,7 @@ const UpdateTicketService = async ({
         } catch (error: any) {
           // Se a sessão do WhatsApp não estiver inicializada, tentar reinicializar
           const errorMessage = error?.message || String(error);
-          if (errorMessage.includes("ERR_WAPP_NOT_INITIALIZED") || errorMessage.includes("ERR_SENDING_WAPP_MSG")) {
+          if (errorMessage.includes("ERR_WAPP_NOT_INITIALIZED")) {
             logger.warn(`WhatsApp session not initialized for ticket ${ticketId}. Checking session status before restart.`);
             try {
               const whatsapp = await Whatsapp.findOne({

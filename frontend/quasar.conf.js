@@ -124,8 +124,10 @@ module.exports = function (ctx) {
 
     // https://quasar.dev/quasar-cli/developing-pwa/configuring-pwa
     pwa: {
-      workboxPluginMode: 'GenerateSW', // 'GenerateSW' or 'InjectManifest'
-      workboxOptions: {maximumFileSizeToCacheInBytes: 5000000,}, // only for GenerateSW
+      workboxPluginMode: 'InjectManifest',
+      workboxOptions: {
+        maximumFileSizeToCacheInBytes: 5000000
+      },
       manifest: {
         name: 'IZING',
         short_name: 'IZING',
